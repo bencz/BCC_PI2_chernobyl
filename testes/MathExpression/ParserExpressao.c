@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
-#include "ParserExpressao.h"
+#include <ctype.h>
+#include <string.h>
+#include "parserExpressao.h"
 
 /*
 { BNF:
@@ -20,16 +22,36 @@
 #define TAM_MAX_NOME          256
 #define TAM_MAX_FUNCOES       256
 
+static bool isAddOp(char c)
+{
+  return (c == '+' || c == '-'); 
+}
+
+static bool isMulOp(char c) 
+{ 
+  return (c == '*' || c == '/' || c == '^');
+}
+
+static bool isNumeric(char c)
+{
+  return (isdigit(c) || c == '.' || c == ',');
+}
+
+static bool isLetter(char c)
+{
+  return (isalpha(c) || c == '_');
+}
+
 static bool hasError;
 
 static char substring(const char *entrada, int offset, int tamanho, char *destino)
 {
   int tamanho_input = (int)strlen(entrada);
-  if(offset + len > tamanho_input)
+  if(offset + tamanho > tamanho_input)
     return NULL;
   
   strncpy(destino, entrada + offset, tamanho);
-  return dest;
+  return destino;
 }
 
 static void strtrim(char *str, char *saida)
