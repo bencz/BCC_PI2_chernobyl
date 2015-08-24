@@ -22,30 +22,61 @@
 
 static bool hasError;
 
-static double Fator()
+static char substring(const char *entrada, int offset, int tamanho, char *destino)
+{
+  int tamanho_input = (int)strlen(entrada);
+  if(offset + len > tamanho_input)
+    return NULL;
+  
+  strncpy(destino, entrada + offset, tamanho);
+  return dest;
+}
+
+static void strtrim(char *str, char *saida)
+{
+  int i = 0;
+  int j = 0;
+  int tamanho_input = (int)strlen(str);
+  
+  for(i = 0;i<tamanho_input;i++)
+  {
+    if(str[i] != ' ' && str[i] != '\t')
+      saida[j++] = str[i];
+  }
+  saida[j] = '\0';
+}
+
+static double fatorial(int valor)
+{
+  double resultado;
+  resultado = (valor <= 1) ? valor : (valor * fatorial(valor -1));
+  return resultado;
+}
+
+static double fator()
 {
   return 0;
 }
 
-static double Termo()
+static double termo()
 {
   double valor;
   double tmpValor;
   
-  valor = Fator();
+  valor = fator();
 }
 
-static double Expressao()
+static double expressao()
 {
   double valor;
-  valor = Termo();
+  valor = termo();
 }
                                               
-double Calcula(const char *formula)
+double calcula(const char *formula)
 {
 }  
 
-int TemErro()
+int temErro()
 {
   return temErro;
 }
