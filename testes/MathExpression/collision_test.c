@@ -253,7 +253,7 @@ int main()
 				{
            case ALLEGRO_KEY_UP:
               key[KEY_UP] = false;
-							break;
+	      break;
 
            case ALLEGRO_KEY_DOWN:
               key[KEY_DOWN] = false;
