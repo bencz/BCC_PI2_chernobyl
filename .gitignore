@@ -1,0 +1,6 @@
+# jogo compilado
+/testes/menus/bin/
+
+# coisos do sublime
+*.sublime-project
+*.sublime-workspace
