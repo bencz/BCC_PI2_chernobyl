@@ -512,7 +512,7 @@ double Factor()
       Value = Expression();
       if (FParseText[iCurPos] != ')')
         {
-          hasError = 1;
+          temErro = 1;
           fprintf(stderr, "Parenteses nao coicidem!\n");
           return -1; 
         }
@@ -544,7 +544,7 @@ double Factor()
                           Value = userFuncList[idx].func(Expression());
                       if (FParseText[iCurPos] != ')')
                         {
-                          hasError = 1;
+                          temErro = 1;
                           fprintf(stderr, "Faltou um ')'!\n");
                           return -1; 
                         }
@@ -562,7 +562,7 @@ double Factor()
                             case pfTan:
                                         if (cos(Value) <=  EPSILON) 
                                           {
-                                            hasError = 1;
+                                            temErro = 1;
                                             fprintf(stderr, "Impossivel calcular a tangente de 90!\n");
                                             return -1; 
                                           }
@@ -576,7 +576,7 @@ double Factor()
                             case pfLn: 
                                         if (Value <= EPSILON)
                                           {
-                                            hasError = 1;
+                                            temErro = 1;
                                             fprintf(stderr, "O valor de LN tem que ser maior que EPSILON!\n");
                                             return -1; 
                                           }
@@ -587,7 +587,7 @@ double Factor()
                             case pfLog:
                                         if (Value <= 0)
                                           {
-                                            hasError = 1;
+                                            temErro = 1;
                                             fprintf(stderr, "Impossivel calcular o Log com valores menores ou iguais a 0!\n");
                                             return -1; 
                                           }
@@ -598,7 +598,7 @@ double Factor()
                             case pfSqrt:
                                         if (Value < 0)
                                           {
-                                            hasError = 1;
+                                            temErro = 1;
                                             fprintf(stderr, "Impossivel calcular raiz quadrada de numero menores que 0!\n");
                                             return -1; 
                                           }
@@ -609,7 +609,7 @@ double Factor()
                             case pfFact:
                                         if (Value < 0)
                                           {
-                                            hasError = 1;
+                                            temErro = 1;
                                             fprintf(stderr, "Para calcular o fatorial o numero deve ser maior que 0!\n");
                                             return -1;
                                           }
@@ -629,7 +629,7 @@ double Factor()
 
                           if (FParseText[iCurPos] != ')')
                             {
-                              hasError = 1;
+                              temErro = 1;
                               fprintf(stderr, "Faltou um ')'\n");
                               return -1; 
                             }
@@ -638,7 +638,7 @@ double Factor()
                         }
                       else
                         {
-                          hasError = 1;
+                          temErro = 1;
                           fprintf(stderr, "Erro de sintaxe!\n");
                           return -1;
                         }
