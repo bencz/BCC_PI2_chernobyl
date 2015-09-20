@@ -44,12 +44,10 @@ void calculatePoints() {
 	switch (functionIndex) {
 		case 0:
 		{
-			double aaaa = 0;
 			adicionaVariavelDoUsuario("p", 0);
 			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
 				setaValorDaVariavel("p", p);
-				aaaa = calcula("p");
-				functionCache[cacheCount] = aaaa;
+				functionCache[cacheCount] = calcula("p");
 			}
 		}		
 		break;
@@ -66,9 +64,17 @@ void calculatePoints() {
 		{
 			adicionaVariavelDoUsuario("n", 1);
 			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-				//printf("%f\n", p);
 				setaValorDaVariavel("n", p);
 				functionCache[cacheCount] = calcula("1.0/(n)");
+			}
+		}
+		case 3:
+		{
+			adicionaVariavelDoUsuario("teste", 1);
+			registraFuncaoDoUsuario("tempFunctionC", tempFunctionC);
+			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
+				setaValorDaVariavel("teste", p);
+				functionCache[cacheCount] = calcula("tempFunctionC(teste)");
 			}
 		}
 		break;
@@ -123,12 +129,12 @@ bool level_update() {
 	//temp: alternar entre as funções de teste
 	if (input.up->press) {
 		functionIndex--;
-		if (functionIndex < 0) functionIndex = 2;
+		if (functionIndex < 0) functionIndex = 3;
 		calculatePoints();
 	}
 	if (input.down->press) {
 		functionIndex++;
-		if (functionIndex > 2) functionIndex = 0;
+		if (functionIndex > 3) functionIndex = 0;
 		calculatePoints();
 	}
 	

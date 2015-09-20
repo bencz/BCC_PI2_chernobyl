@@ -496,163 +496,157 @@ void registraFuncaoDoUsuario(char *funcName, UserFunction proc)
 
 double Factor()
 {
-	double Value;
-	char tmpStr[MAX_NAME];
+  double Value;
+  char tmpStr[MAX_NAME];
 
-	TParserFunc NoFunc;
-	char UserFuncName[MAX_NAME];
+  TParserFunc NoFunc;
+  char UserFuncName[MAX_NAME];
 
-	memset(tmpStr, 0, sizeof(tmpStr));
-	memset(UserFuncName, 0, sizeof(UserFuncName));
+  memset(tmpStr, 0, sizeof(tmpStr));
+  memset(UserFuncName, 0, sizeof(UserFuncName));
 
-	Value = 0;
-	if (FParseText[iCurPos] == '(')
-	{
-		iCurPos++;
-		Value = Expression();
-		if (FParseText[iCurPos] != ')')
-		{
-			temErro = 1;
-			fprintf(stderr, "Parenteses nao coicidem\n");
-			return -1;
-		}
-		iCurPos++;
-	}
-	else
-	{
-		if (IsNumeric(FParseText[iCurPos]))
-		{
-			while (IsNumeric(FParseText[iCurPos]))
-			{
-				sprintf(tmpStr + strlen(tmpStr), "%c", FParseText[iCurPos]);
-				iCurPos++;
-			}
-			Value = atof(tmpStr);
-		}
-		else
-		{
-			if (!GetConst(&Value))
-			{
-				if (!GetVariable(&Value))
-				{
-					if (GetUserFunction(UserFuncName))
-					{
-						iCurPos++;
+  Value = 0;
+  if (FParseText[iCurPos] == '(')
+    {
+      iCurPos++;
+      Value = Expression();
+      if (FParseText[iCurPos] != ')')
+        {
+          hasError = 1;
+          fprintf(stderr, "Parenteses nao coicidem!\n");
+          return -1; 
+        }
+      iCurPos++;
+    }
+  else
+    {
+      if (IsNumeric(FParseText[iCurPos]))
+        {
+          while (IsNumeric(FParseText[iCurPos]))
+            {
+              sprintf(tmpStr + strlen(tmpStr), "%c", FParseText[iCurPos]);
+              iCurPos++;
+            }
+          Value = atof(tmpStr);
+        }
+      else
+        {
+          if (!GetConst(&Value)) 
+              if (!GetVariable(&Value)) 
+                {
+                  if (GetUserFunction(UserFuncName)) 
+                    {
+                      iCurPos++;
 
-						int idx;
-						bool iExists = UserFunctionExists(UserFuncName, &idx);
-						if (iExists)
-							Value = userFuncList[idx].func(Expression());
-						if (FParseText[iCurPos] != ')')
-						{
-							temErro = 1;
-							fprintf(stderr, "Faltou um ')'\n");
-							return -1;
-						}
-						iCurPos++;
-					}
-					else
-					{
-						if (GetFunction(&NoFunc))
-						{
-							iCurPos++;
-							Value = Expression();
-							switch (NoFunc)
-							{
-							case pfArcTan: Value = atan(Value); break;
-							case pfCos: Value = cos(Value); break;
-							case pfSin: Value = sin(Value); break;
-							case pfTan:
-								if (cos(Value) <= EPSILON)
-								{
-									temErro = 1;
-									fprintf(stderr, "Impossivel calcular a tangente de 90!\n");
-									return -1;
-								}
-								else
-									Value = tan(Value);
-								break;
+                      int idx;
+                      bool iExists = UserFunctionExists(UserFuncName, &idx);
+                      if (iExists)
+                          Value = userFuncList[idx].func(Expression());
+                      if (FParseText[iCurPos] != ')')
+                        {
+                          hasError = 1;
+                          fprintf(stderr, "Faltou um ')'!\n");
+                          return -1; 
+                        }
+                      iCurPos++;
+                    }
+                  else 
+                      if (GetFunction(&NoFunc)) 
+                        {
+                          iCurPos++;
+                          Value = Expression();
+                          switch (NoFunc) {
+                            case pfArcTan: Value = atan(Value); break;
+                            case pfCos: Value = cos(Value); break;
+                            case pfSin: Value = sin(Value); break;
+                            case pfTan:
+                                        if (cos(Value) <=  EPSILON) 
+                                          {
+                                            hasError = 1;
+                                            fprintf(stderr, "Impossivel calcular a tangente de 90!\n");
+                                            return -1; 
+                                          }
+                                        else
+                                            Value = tan(Value); 
+                                        break;
 
-							case pfAbs: Value = fabs(Value); break;
-							case pfExp: Value = exp(Value); break;
+                            case pfAbs: Value = fabs(Value); break;
+                            case pfExp: Value = exp(Value); break;
 
-							case pfLn:
-								if (Value <= EPSILON)
-								{
-									temErro = 1;
-									fprintf(stderr, "O valor de LN tem que ser menor que EPSILON!\n");
-									return -1;
-								}
-								else
-									Value = log(Value) / log(10);
-								break;
+                            case pfLn: 
+                                        if (Value <= EPSILON)
+                                          {
+                                            hasError = 1;
+                                            fprintf(stderr, "O valor de LN tem que ser maior que EPSILON!\n");
+                                            return -1; 
+                                          }
+                                        else
+                                            Value = log(Value) / log(10);
+                                        break;
 
-							case pfLog:
-								if (Value <= 0)
-								{
-									temErro = 1;
-									fprintf(stderr, "Impossivel calcular o Log com valores menores ou iguais a 0!\n");
-									return -1;
-								}
-								else
-									Value = log(Value);
-								break;
+                            case pfLog:
+                                        if (Value <= 0)
+                                          {
+                                            hasError = 1;
+                                            fprintf(stderr, "Impossivel calcular o Log com valores menores ou iguais a 0!\n");
+                                            return -1; 
+                                          }
+                                        else
+                                            Value = log(Value);
+                                        break;
 
-							case pfSqrt:
-								if (Value < 0)
-								{
-									temErro = 1;
-									fprintf(stderr, "Impossivel calcular raiz com numero menores que 0!\n");
-									return -1;
-								}
-								else
-									Value = sqrt(Value);
-								break;
+                            case pfSqrt:
+                                        if (Value < 0)
+                                          {
+                                            hasError = 1;
+                                            fprintf(stderr, "Impossivel calcular raiz quadrada de numero menores que 0!\n");
+                                            return -1; 
+                                          }
+                                        else
+                                            Value = sqrt(Value); 
+                                        break;
 
-							case pfFact:
-								if (Value < 0)
-								{
-									temErro = 1;
-									fprintf(stderr, "Para calcular o fatorial o numero deve ser maior que 0!\n");
-									return -1;
-								}
-								else
-									Value = Fatorial((int)Value);
-								break;
+                            case pfFact:
+                                        if (Value < 0)
+                                          {
+                                            hasError = 1;
+                                            fprintf(stderr, "Para calcular o fatorial o numero deve ser maior que 0!\n");
+                                            return -1;
+                                          }
+                                        else
+                                            Value = Factorial((int)Value);
+                                        break;
 
-							case pfSqr:     Value = pow(Value, 2); break;
-							case pfInt:     Value = (int)Value; break;
-							case pfRound:   Value = round(Value); break;
-							case pfFloor:   Value = floor(Value); break;
-							case pfCeiling: Value = ceil(Value); break;
-							case pfArcSin:  Value = (Value == 1) ? PI / 2 : asin(Value); break;
-							case pfArcCos:  Value = (Value == 1) ? 0 : acos(Value); break;
-							case pfSign: Value = (Value > 0) ? 1 : -1; break;
-							}
+                            case pfSqr:     Value = pow(Value, 2); break;
+                            case pfInt:     Value = (int)Value; break;
+                            case pfRound:   Value = round(Value); break;
+                            case pfFloor:   Value = floor(Value); break;
+                            case pfCeiling: Value = ceil(Value); break;
+                            case pfArcSin:  Value = (Value == 1) ? PI/2 : asin(Value); break;
+                            case pfArcCos:  Value = (Value == 1) ? 0 : acos(Value); break;
+                            case pfSign: Value = (Value > 0) ? 1 : -1; break;
+                          } 
 
-							if (FParseText[iCurPos] != ')')
-							{
-								temErro = 1;
-								fprintf(stderr, "Faltou um ')'\n");
-								return -1;
-							}
+                          if (FParseText[iCurPos] != ')')
+                            {
+                              hasError = 1;
+                              fprintf(stderr, "Faltou um ')'\n");
+                              return -1; 
+                            }
 
-							iCurPos++;
-						}
-						
-						else
-						{
-							temErro = 1;
-							fprintf(stderr, "Erro de sintaxe!\n");
-							return -1;
-						}
-				}
-		}
-	}
-	}
-	}
+                          iCurPos++;
+                        }
+                      else
+                        {
+                          hasError = 1;
+                          fprintf(stderr, "Erro de sintaxe!\n");
+                          return -1;
+                        }
+                }
+        }
+    }
 
-	return Value;
+  return Value;
 }
 
 double Term()
