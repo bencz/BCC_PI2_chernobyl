@@ -42,7 +42,7 @@ bool start() {
 	al_flip_display();
 	
 	//seleciona a cena inicial. se retornar false, deu algum erro ao carregar
-	if (!sceneSelect(MENU)) {
+	if (!sceneSelect(LEVEL)) {
 		return false;
 	}
 	scene.tempo = -1;

@@ -9,10 +9,11 @@
 
 #include "utils.h"
 #include "game.h"
+#include "ParserExpressao.h"
 
 #define CACHE_MAX 1024
 
-float functionCache[CACHE_MAX]; //cache
+double functionCache[CACHE_MAX]; //cache
 int cacheCount; //tamanho do cache
 float xStart,xEnd,xGap; //"domínio" da função e distância entre cada x calculado
 float xSize,ySize; //tamanho de cada unidade em pixels
@@ -21,15 +22,15 @@ int functionIndex; //temp: index da função escolhida, no caso só pra testar o
 
 //temp: funções de teste
 
-float tempFunctionA(float x) {
+double tempFunctionA(double x) {
 	return x;
 }
 
-float tempFunctionB(float x) {
+double tempFunctionB(double x) {
 	return x*x;
 }
 
-float tempFunctionC(float x) {
+double tempFunctionC(double x) {
 	return 1.0/x;
 }
 
@@ -41,14 +42,41 @@ void calculatePoints() {
 	//temp: escolher a função
 	float (*func)(float);
 	switch (functionIndex) {
-		case 0: func = &tempFunctionA; break;
-		case 1: func = &tempFunctionB; break;
-		case 2: func = &tempFunctionC; break;
+		case 0:
+		{
+			double aaaa = 0;
+			adicionaVariavelDoUsuario("p", 0);
+			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
+				setaValorDaVariavel("p", p);
+				aaaa = calcula("p");
+				functionCache[cacheCount] = aaaa;
+			}
+		}		
+		break;
+		case 1:
+		{
+			adicionaVariavelDoUsuario("t", 0);
+			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
+				setaValorDaVariavel("t", p);
+				functionCache[cacheCount] = calcula("t*t");
+			}
+		}
+		break;
+		case 2:
+		{
+			adicionaVariavelDoUsuario("n", 1);
+			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
+				//printf("%f\n", p);
+				setaValorDaVariavel("n", p);
+				functionCache[cacheCount] = calcula("1.0/(n)");
+			}
+		}
+		break;
 	}
 	
-	for (float p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-		functionCache[cacheCount] = (*func)(p);
-	}
+	/*for (float p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
+		//functionCache[cacheCount] = (*func)(p);
+	}*/
 }
 
 bool level_load();
@@ -66,8 +94,8 @@ bool level_start() {
 	
 	//temp: valores quaisquer
 	xGap = 1.0/8.0;
-	xStart = -2;
-	xEnd = 2;
+	xStart = -7.5;
+	xEnd = 7.5;
 	xSize = ySize = 64;
 	xOffset = SCREEN_W/2;
 	yOffset = SCREEN_H/2;

@@ -532,6 +532,7 @@ double Factor()
 		else
 		{
 			if (!GetConst(&Value))
+			{
 				if (!GetVariable(&Value))
 				{
 					if (GetUserFunction(UserFuncName))
@@ -551,11 +552,13 @@ double Factor()
 						iCurPos++;
 					}
 					else
+					{
 						if (GetFunction(&NoFunc))
 						{
 							iCurPos++;
 							Value = Expression();
-							switch (NoFunc) {
+							switch (NoFunc)
+							{
 							case pfArcTan: Value = atan(Value); break;
 							case pfCos: Value = cos(Value); break;
 							case pfSin: Value = sin(Value); break;
@@ -636,6 +639,7 @@ double Factor()
 
 							iCurPos++;
 						}
+						
 						else
 						{
 							temErro = 1;
@@ -644,6 +648,8 @@ double Factor()
 						}
 				}
 		}
+	}
+	}
 	}
 
 	return Value;
@@ -664,12 +670,12 @@ double Term()
 		case '^': Value = pow(Value, Factor()); break;
 		case '/':
 			/*tmpValue = Factor();
-			if (tmpValue <= EPSILON)
+			 if (tmpValue <= EPSILON)
 			{
 				temErro = 1;
-				fprintf(stderr, "Divisão por 0!\n");
+				fprintf(stderr, "Divisão por 0! ( Term )\n");
 				return -1;
-			}*/
+			} */
 			Value = Value / Factor();
 			break;
 		}

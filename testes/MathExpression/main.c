@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <windows.h>
+//#include <windows.h>
 #include "ParserExpressao.h"
 
 double Multiplica_por_4(double value)
@@ -16,11 +16,11 @@ int main(int argc, char *argv[])
 	adicionaVariavelDoUsuario("var", 15);
 	registraFuncaoDoUsuario("Multiplica_por_4", Multiplica_por_4);
 
-	DWORD ticks1 = GetTickCount();
-	for (int aaa = 0;aaa < 20000; aaa++)
+//	DWORD ticks1 = GetTickCount();
+//	for (int aaa = 0;aaa < 20000; aaa++)
 		result = calcula(expr);
-	DWORD ticks2 = GetTickCount();
-	printf("Resultado: %f\nTempo de calculo para 2000 interacoes: %d\n", result, ticks2 - ticks1);
+//	DWORD ticks2 = GetTickCount();
+	printf("Resultado: %f\nTempo de calculo para 2000 interacoes: %d\n", result, -111/*ticks2 - ticks1*/);
 
 
 	return 0;
