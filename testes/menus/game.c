@@ -5,11 +5,6 @@
 #include "settings.h"
 #include "level.h"
 
-const float FPS = 60; //frame rate
-const float DELTA = 1.0/60; //inversa
-const int SCREEN_W = 960; //resolução em x
-const int SCREEN_H = 540; //resolução em y
-
 void sceneLoad(SceneID id) {
 	if (scene.tempo != 0) return;
 	//prepara a transição para a cena escolhida
@@ -25,10 +20,18 @@ bool sceneSelect(SceneID id) {
 		case SETTINGS: return settings_start();
 		case LEVEL: return level_start();
 	}
+	return false;
 }
 
 bool sceneForceLoad(SceneID id) {
 	//descarrega a cena atual e coloca a cena nova, sem mexer na transição
 	(*scene.unload)();
 	return sceneSelect(id);
+}
+
+void exitGame() {
+	if (scene.tempo != 0) return;
+	//cria um efeito de transição mas para fechar a janela
+	scene.exitRequest = true;
+	scene.tempo = 1;
 }

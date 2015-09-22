@@ -5,7 +5,7 @@
 
 bool level_load();
 void level_unload();
-bool level_update();
+void level_update();
 void level_draw();
 bool level_start();
 

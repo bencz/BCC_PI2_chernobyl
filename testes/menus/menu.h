@@ -5,7 +5,7 @@
 
 bool menu_load();
 void menu_unload();
-bool menu_update();
+void menu_update();
 void menu_draw();
 bool menu_start();
 

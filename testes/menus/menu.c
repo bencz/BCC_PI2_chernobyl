@@ -10,11 +10,11 @@
 #include "utils.h"
 #include "game.h"
 
-float pulseTempo;
+int selection;
 
 bool menu_load();
 void menu_unload();
-bool menu_update();
+void menu_update();
 void menu_draw();
 
 bool menu_start() {
@@ -24,9 +24,9 @@ bool menu_start() {
 	scene.unload = &menu_unload;
 	scene.update = &menu_update;
 	scene.draw = &menu_draw;
-	
-	pulseTempo = 1;
-	
+
+	selection = 0;
+
 	return true;
 }
 
@@ -38,29 +38,26 @@ void menu_unload() {
 	//
 }
 
-bool menu_update() {
-	//temp: alternar entre as cenas
-	if (input.right->press) {
-		sceneLoad(SETTINGS);
+void menu_update() {
+	if (scene.tempo <= 0) {
+		if (input.up->press && selection > 0) selection--;
+		if (input.down->press && selection < 2) selection++;
+		if (input.space->press) switch (selection) {
+			case 0: sceneLoad(LEVEL);
+			case 1: sceneLoad(SETTINGS);
+			default: exitGame();
+		}
 	}
-	
-	//n tem nada ainda, mas dá pra apertar espaço e pulsar a ovelha
-	if (input.space->press) {
-		pulseTempo = 1.3;
-	} else if (input.space->release) {
-		pulseTempo = 1.5;
-	} else if (input.space->hold) {
-		pulseTempo = lerp(pulseTempo,1.1,DELTA*10);
-	} else {
-		pulseTempo = lerp(pulseTempo,1,DELTA*10);
-	}
-	
-	return true;
 }
 
 void menu_draw() {
 	al_clear_to_color(al_map_rgb(255,255,255));
-	al_draw_textf(data.font_regular,al_map_rgb(0,0,0),0,0,ALLEGRO_ALIGN_LEFT,"menu");
-	al_draw_textf(data.font_regular,al_map_rgb(0,0,0),0,30,ALLEGRO_ALIGN_LEFT,"direita: configurações");
-	al_draw_scaled_bitmap(data.sprite_test,0,0,256,256,64,64,pulseTempo*256,pulseTempo*256,0);
+	ALLEGRO_COLOR colorButton = al_map_rgb(0,0,0);
+	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
+
+	//textos
+	al_draw_textf(data.font_regular,colorButton,SCREEN_W/2,30,ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
+	al_draw_textf(data.font_regular,(selection == 0)?colorButton2:colorButton,SCREEN_W/2,SCREEN_H/2-30,ALLEGRO_ALIGN_CENTRE,"jogar");
+	al_draw_textf(data.font_regular,(selection == 1)?colorButton2:colorButton,SCREEN_W/2,SCREEN_H/2,ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_textf(data.font_regular,(selection == 2)?colorButton2:colorButton,SCREEN_W/2,SCREEN_H/2+30,ALLEGRO_ALIGN_CENTRE,"sair");
 }

@@ -14,6 +14,7 @@
 #include "menu.h"
 #include "settings.h"
 #include "level.h"
+#include "ParserExpressao.h"
 
 bool load() {
 	ALLEGRO_PATH *path = al_get_standard_path(ALLEGRO_EXENAME_PATH);
@@ -41,19 +42,23 @@ bool start() {
 	al_clear_to_color(al_map_rgb(0,0,0));
 	al_flip_display();
 	
+	adicionaVariavelDoUsuario("x",0);
+
 	//seleciona a cena inicial. se retornar false, deu algum erro ao carregar
-	if (!sceneSelect(LEVEL)) {
+	if (!sceneSelect(MENU)) {
 		return false;
 	}
 	scene.tempo = -1;
-	
+	scene.exitRequest = false;
+
 	//inicia as teclas
 	input.up = initKey();
 	input.down = initKey();
 	input.left = initKey();
 	input.right = initKey();
 	input.space = initKey();
-	
+	input.esc = initKey();
+
 	return true;
 }
 
@@ -64,8 +69,8 @@ bool update() {
 		scene.tempo -= DELTA*1.75;
 		if (scene.tempo <= 0) {
 			scene.tempo--;
-			//se retornar false, deu algum erro ao carregar
-			if (!sceneForceLoad(scene.nextScene)) {
+			//se retornar false, a janela será fechada
+			if (scene.exitRequest || !sceneForceLoad(scene.nextScene)) {
 				return false;
 			}
 			sceneLoaded = true;
@@ -76,15 +81,16 @@ bool update() {
 		scene.tempo += DELTA*1.75;
 		if (scene.tempo > 0) scene.tempo = 0;
 	}
-	
+
 	//no caso de nenhuma cena nova ter sido chamada
 	if (!sceneLoaded) {
-		//updates da cena. se retornar false, o jogo é terminado
-		if (!(*scene.update)()) {
-			return false;
+		//updates da cena
+		(*scene.update)();
+		if (input.esc->press) {
+			exitGame();
 		}
 		(*scene.draw)();
-		
+
 		//efeito de fade in/out
 		if (scene.tempo > 0) {
 			al_draw_filled_rectangle(0,0,SCREEN_W,SCREEN_H,al_map_rgba_f(0,0,0,ease((1-scene.tempo)*1.125)));
@@ -93,14 +99,15 @@ bool update() {
 		}
 		al_flip_display();
 	}
-	
+
 	//reseta as teclas
 	resetKey(input.up);
 	resetKey(input.down);
 	resetKey(input.left);
 	resetKey(input.right);
 	resetKey(input.space);
-	
+	resetKey(input.esc);
+
 	return true;
 }
 
@@ -150,7 +157,7 @@ int main() {
 	al_register_event_source(game.eventQueue,al_get_timer_event_source(game.timer));
 	al_register_event_source(game.eventQueue,al_get_mouse_event_source());
 	al_register_event_source(game.eventQueue,al_get_keyboard_event_source());
-	
+
 	//início do programa
 	if (!load() || !start()) {
 		unload();
@@ -159,7 +166,7 @@ int main() {
 		al_destroy_event_queue(game.eventQueue);
 		return -1;
 	}
-	
+
 	//update
 	al_start_timer(game.timer);
 	bool upd = true;
@@ -177,6 +184,7 @@ int main() {
 				case ALLEGRO_KEY_LEFT: k = input.left; break;
 				case ALLEGRO_KEY_RIGHT: k = input.right; break;
 				case ALLEGRO_KEY_SPACE: k = input.space; break;
+				case ALLEGRO_KEY_ESCAPE: k = input.esc; break;
 				default: k = NULL; break;
 			}
 			if (k != NULL) {
@@ -196,7 +204,7 @@ int main() {
 			}
 		}
 	}
-	
+
 	//fim do programa
 	(*scene.unload)();
 	unload();

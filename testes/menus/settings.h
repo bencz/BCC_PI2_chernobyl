@@ -5,7 +5,7 @@
 
 bool settings_load();
 void settings_unload();
-bool settings_update();
+void settings_update();
 void settings_draw();
 bool settings_start();
 

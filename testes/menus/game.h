@@ -27,49 +27,50 @@
 		return false; \
 	}
 
-extern const float FPS;
-extern const float DELTA;
-extern const int SCREEN_W;
-extern const int SCREEN_H;
+#define FPS 60
+#define DELTA 0.0166666666666667
+#define SCREEN_W 960
+#define SCREEN_H 540
 
 struct Game {
-	
+
 	ALLEGRO_DISPLAY *display;
 	ALLEGRO_EVENT_QUEUE *eventQueue;
 	ALLEGRO_TIMER *timer;
-	
+
 } game;
 
 struct Data {
-	
+
 	//fontes
 	ALLEGRO_FONT *font_regular;
 	ALLEGRO_FONT *font_mono;
-	
+
 	//bitmaps
 	ALLEGRO_BITMAP *sprite_test;
-	
+
 } data;
 
 typedef enum {
-	
+
 	MENU,
 	SETTINGS,
 	LEVEL
-	
+
 } SceneID;
 
 struct Scene {
-	
+
 	//controle de transição
 	float tempo;
 	SceneID nextScene;
-	
+	bool exitRequest;
+
 	//funções
 	void (*unload)();
-	bool (*update)();
+	void (*update)();
 	void (*draw)();
-	
+
 } scene;
 
 typedef struct key {
@@ -84,14 +85,17 @@ bool sceneSelect(SceneID id);
 
 bool sceneForceLoad(SceneID id);
 
+void exitGame();
+
 struct Input {
-	
+
 	key *up;
 	key *down;
 	key *left;
 	key *right;
 	key *space;
-	
+	key *esc;
+
 } input;
 
 #endif

@@ -223,7 +223,7 @@ int adicionaVariavelDoUsuario(const char *name, double value)
 	if (nVars == MAX_VARIABLE - 1)
 	{
 		temErro = 1;
-		fprintf(stderr, "Indice da vari√°vel fora dos limites!\n");
+		fprintf(stderr, "Indice da vari·vel fora dos limites!\n");
 		return -1;
 	}
 
@@ -614,7 +614,7 @@ double Factor()
                                             return -1;
                                           }
                                         else
-                                            Value = Factorial((int)Value);
+                                            Value = Fatorial((int)Value);
                                         break;
 
                             case pfSqr:     Value = pow(Value, 2); break;
@@ -667,7 +667,7 @@ double Term()
 			 if (tmpValue <= EPSILON)
 			{
 				temErro = 1;
-				fprintf(stderr, "Divis√£o por 0! ( Term )\n");
+				fprintf(stderr, "Divis„o por 0! ( Term )\n");
 				return -1;
 			} */
 			Value = Value / Factor();
@@ -734,7 +734,7 @@ double calcula(const char *formula)
 	if (strlen(formula) >= MAX_FORMULA_LEN)
 	{
 		temErro = 1;
-		fprintf(stderr, "Comprimento express√µes eh maior que o maximo!\n");
+		fprintf(stderr, "Comprimento expressıes eh maior que o maximo!\n");
 		return 0;
 	}
 

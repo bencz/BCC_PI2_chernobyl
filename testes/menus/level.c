@@ -18,21 +18,8 @@ int cacheCount; //tamanho do cache
 float xStart,xEnd,xGap; //"domínio" da função e distância entre cada x calculado
 float xSize,ySize; //tamanho de cada unidade em pixels
 float xOffset,yOffset; //deslocamento do ponto (0,0) do gráfico na tela
+char functionString[1024]; //função digitada pelo usuário
 int functionIndex; //temp: index da função escolhida, no caso só pra testar o plotador
-
-//temp: funções de teste
-
-double tempFunctionA(double x) {
-	return x;
-}
-
-double tempFunctionB(double x) {
-	return x*x;
-}
-
-double tempFunctionC(double x) {
-	return 1.0/x;
-}
 
 //função para calcular os pontos
 
@@ -40,54 +27,21 @@ void calculatePoints() {
 	cacheCount = 0;
 	
 	//temp: escolher a função
-	float (*func)(float);
 	switch (functionIndex) {
-		case 0:
-		{
-			adicionaVariavelDoUsuario("p", 0);
-			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-				setaValorDaVariavel("p", p);
-				functionCache[cacheCount] = calcula("p");
-			}
-		}		
-		break;
-		case 1:
-		{
-			adicionaVariavelDoUsuario("t", 0);
-			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-				setaValorDaVariavel("t", p);
-				functionCache[cacheCount] = calcula("t*t");
-			}
-		}
-		break;
-		case 2:
-		{
-			adicionaVariavelDoUsuario("n", 1);
-			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-				setaValorDaVariavel("n", p);
-				functionCache[cacheCount] = calcula("1.0/(n)");
-			}
-		}
-		case 3:
-		{
-			adicionaVariavelDoUsuario("teste", 1);
-			registraFuncaoDoUsuario("tempFunctionC", tempFunctionC);
-			for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-				setaValorDaVariavel("teste", p);
-				functionCache[cacheCount] = calcula("tempFunctionC(teste)");
-			}
-		}
-		break;
+		case 0: strcpy(functionString,"x"); break;
+		case 1: strcpy(functionString,"x*x"); break;
+		case 2: strcpy(functionString,"1/x"); break;
 	}
 	
-	/*for (float p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
-		//functionCache[cacheCount] = (*func)(p);
-	}*/
+	for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
+		setaValorDaVariavel("x",p);
+		functionCache[cacheCount] = calcula(functionString);
+	}
 }
 
 bool level_load();
 void level_unload();
-bool level_update();
+void level_update();
 void level_draw();
 
 bool level_start() {
@@ -97,9 +51,9 @@ bool level_start() {
 	scene.unload = &level_unload;
 	scene.update = &level_update;
 	scene.draw = &level_draw;
-	
+
 	//temp: valores quaisquer
-	xGap = 1.0/8.0;
+	xGap = 1.0/32.0;
 	xStart = -7.5;
 	xEnd = 7.5;
 	xSize = ySize = 64;
@@ -107,7 +61,7 @@ bool level_start() {
 	yOffset = SCREEN_H/2;
 	functionIndex = 0;
 	calculatePoints();
-	
+
 	return true;
 }
 
@@ -120,47 +74,47 @@ void level_unload() {
 	//descarregar esses assets
 }
 
-bool level_update() {
-	//temp: alternar entre as cenas
-	if (input.left->press) {
-		sceneLoad(SETTINGS);
+void level_update() {
+	if (scene.tempo <= 0) {
+		if (input.space->press) {
+			sceneLoad(MENU);
+		}
+
+		//temp: alternar entre as funções de teste
+		if (input.up->press) {
+			functionIndex--;
+			if (functionIndex < 0) functionIndex = 2;
+			calculatePoints();
+		}
+		if (input.down->press) {
+			functionIndex++;
+			if (functionIndex > 2) functionIndex = 0;
+			calculatePoints();
+		}
 	}
-	
-	//temp: alternar entre as funções de teste
-	if (input.up->press) {
-		functionIndex--;
-		if (functionIndex < 0) functionIndex = 3;
-		calculatePoints();
-	}
-	if (input.down->press) {
-		functionIndex++;
-		if (functionIndex > 3) functionIndex = 0;
-		calculatePoints();
-	}
-	
-	return true;
 }
 
 void level_draw() {
 	al_clear_to_color(al_map_rgb(255,255,255));
-	al_draw_textf(data.font_regular,al_map_rgb(0,0,0),0,0,ALLEGRO_ALIGN_LEFT,"fase");
-	al_draw_textf(data.font_regular,al_map_rgb(0,0,0),0,30,ALLEGRO_ALIGN_LEFT,"esquerda: configurações");
-	
+	ALLEGRO_COLOR colorButton = al_map_rgb(0,0,0);
+	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
+
 	//desenha os eixos
 	al_draw_line(xOffset,0,xOffset,SCREEN_H,al_map_rgb(204,204,204),3);
 	al_draw_line(0,yOffset,SCREEN_W,yOffset,al_map_rgb(204,204,204),3);
-	
+
 	//plota a função
 	float xSizeN = xSize*xGap;
 	float xOffsetN = xOffset+xStart*xSize;
 	for (int a = 0; a < cacheCount-1; a++) {
-		//daria pra fazer esse cálculo do posicionamento (size*n+offset) durante o cache,
-		//mas estou assumindo que a lógica do jogo também use esse mesmo cache, e que ela
-		//não vai rodar usando pixels como unidade, e sim algo como blocos.
 		al_draw_line(
 			xSizeN*a+xOffsetN,-ySize*functionCache[a]+yOffset,
 			xSizeN*(a+1)+xOffsetN,-ySize*functionCache[a+1]+yOffset,
-			al_map_rgb(255,0,0),3
+			al_color_hsv(360.0*a/(cacheCount-2),1,1),3
 		);
 	}
+
+	//textos
+	al_draw_textf(data.font_regular,colorButton,SCREEN_W/2,30,ALLEGRO_ALIGN_CENTRE,"fase (placeholder)");
+	al_draw_textf(data.font_regular,colorButton2,SCREEN_W/2,SCREEN_H-60,ALLEGRO_ALIGN_CENTRE,"voltar");
 }
