@@ -18,24 +18,14 @@ int cacheCount; //tamanho do cache
 float xStart,xEnd,xGap; //"domínio" da função e distância entre cada x calculado
 float xSize,ySize; //tamanho de cada unidade em pixels
 float xOffset,yOffset; //deslocamento do ponto (0,0) do gráfico na tela
-char functionString[1024]; //função digitada pelo usuário
-int functionIndex; //temp: index da função escolhida, no caso só pra testar o plotador
 
 //função para calcular os pontos
 
 void calculatePoints() {
 	cacheCount = 0;
-	
-	//temp: escolher a função
-	switch (functionIndex) {
-		case 0: strcpy(functionString,"x"); break;
-		case 1: strcpy(functionString,"x*x"); break;
-		case 2: strcpy(functionString,"1/x"); break;
-	}
-	
 	for (double p = xStart; cacheCount < CACHE_MAX && p <= xEnd; cacheCount++,p += xGap) {
 		setaValorDaVariavel("x",p);
-		functionCache[cacheCount] = calcula(functionString);
+		functionCache[cacheCount] = calcula(input.text);
 	}
 }
 
@@ -51,15 +41,19 @@ bool level_start() {
 	scene.unload = &level_unload;
 	scene.update = &level_update;
 	scene.draw = &level_draw;
+	
+	input.text[0] = '\0';
+	input.captureText = true;
+	input.captureFinish = false;
+	input.caretPos = 0;
 
 	//temp: valores quaisquer
-	xGap = 1.0/32.0;
+	xGap = 1.0/8.0;
 	xStart = -7.5;
 	xEnd = 7.5;
 	xSize = ySize = 64;
 	xOffset = SCREEN_W/2;
-	yOffset = SCREEN_H/2;
-	functionIndex = 0;
+	yOffset = SCREEN_H/2-50;
 	calculatePoints();
 
 	return true;
@@ -76,28 +70,22 @@ void level_unload() {
 
 void level_update() {
 	if (scene.tempo <= 0) {
-		if (input.space->press) {
+		if (input.backspace->press) {
 			sceneLoad(MENU);
 		}
-
-		//temp: alternar entre as funções de teste
-		if (input.up->press) {
-			functionIndex--;
-			if (functionIndex < 0) functionIndex = 2;
+		if (input.enter->press && !input.captureText && !input.captureFinish) {
+			input.captureText = true;
+		}
+		if (input.textUpdate) {
+			//printf("ae\n");
 			calculatePoints();
 		}
-		if (input.down->press) {
-			functionIndex++;
-			if (functionIndex > 2) functionIndex = 0;
-			calculatePoints();
-		}
+		//calculatePoints();
 	}
 }
 
 void level_draw() {
 	al_clear_to_color(al_map_rgb(255,255,255));
-	ALLEGRO_COLOR colorButton = al_map_rgb(0,0,0);
-	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 
 	//desenha os eixos
 	al_draw_line(xOffset,0,xOffset,SCREEN_H,al_map_rgb(204,204,204),3);
@@ -113,8 +101,26 @@ void level_draw() {
 			al_color_hsv(360.0*a/(cacheCount-2),1,1),3
 		);
 	}
-
-	//textos
-	al_draw_textf(data.font_regular,colorButton,SCREEN_W/2,30,ALLEGRO_ALIGN_CENTRE,"fase (placeholder)");
-	al_draw_textf(data.font_regular,colorButton2,SCREEN_W/2,SCREEN_H-60,ALLEGRO_ALIGN_CENTRE,"voltar");
+	
+	//textbox
+	al_draw_filled_rectangle(0,SCREEN_H-100,SCREEN_W,SCREEN_H,al_map_rgb(51,51,51));
+	int textboxOffsetX = 40;
+	int textboxOffsetY = SCREEN_H-90;
+	int textboxFontSize = 36;
+	al_draw_textf(data.font_mono,al_map_rgb(255,255,255),textboxOffsetX,textboxOffsetY,ALLEGRO_ALIGN_LEFT,input.text);
+	if (input.captureText) {
+		//seria legal fazer a caret ficar piscando enquanto estiver parada
+		al_draw_line(
+			input.caretPos*textboxFontSize/2+textboxOffsetX+1,
+			textboxOffsetY+4,
+			input.caretPos*textboxFontSize/2+textboxOffsetX+1,
+			textboxOffsetY+textboxFontSize-3,
+			al_map_rgb(255,255,255),1
+		);
+		al_draw_textf(data.font_mono,al_map_rgb(204,204,204),textboxOffsetX-textboxFontSize/2-8,textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
+		al_draw_textf(data.font_regular,al_map_rgb(255,255,255),SCREEN_W/2,SCREEN_H-40,ALLEGRO_ALIGN_CENTRE,"enter: fechar textbox");
+	} else {
+		al_draw_textf(data.font_mono,al_map_rgb(102,102,102),textboxOffsetX-textboxFontSize/2-8,textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
+		al_draw_textf(data.font_regular,al_map_rgb(255,255,255),SCREEN_W/2,SCREEN_H-40,ALLEGRO_ALIGN_CENTRE,"enter: abrir textbox - backspace: voltar");
+	}
 }

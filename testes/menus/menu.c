@@ -42,7 +42,7 @@ void menu_update() {
 	if (scene.tempo <= 0) {
 		if (input.up->press && selection > 0) selection--;
 		if (input.down->press && selection < 2) selection++;
-		if (input.space->press) switch (selection) {
+		if (input.enter->press) switch (selection) {
 			case 0: sceneLoad(LEVEL);
 			case 1: sceneLoad(SETTINGS);
 			default: exitGame();

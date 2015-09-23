@@ -93,8 +93,14 @@ struct Input {
 	key *down;
 	key *left;
 	key *right;
-	key *space;
-	key *esc;
+	key *enter;
+	key *backspace;
+	
+	char text[1024];
+	bool captureText;
+	bool captureFinish;
+	bool textUpdate;
+	int caretPos;
 
 } input;
 

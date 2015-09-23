@@ -40,7 +40,7 @@ void settings_unload() {
 
 void settings_update() {
 	if (scene.tempo <= 0) {
-		if (input.space->press) {
+		if (input.enter->press) {
 			sceneLoad(MENU);
 		}
 

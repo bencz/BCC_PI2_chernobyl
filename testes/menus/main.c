@@ -19,7 +19,7 @@
 bool load() {
 	ALLEGRO_PATH *path = al_get_standard_path(ALLEGRO_EXENAME_PATH);
 	LOADFONT(data.font_regular,28,Ubuntu-R.ttf);
-	LOADFONT(data.font_mono,28,UbuntuMono-B.ttf);
+	LOADFONT(data.font_mono,36,UbuntuMono-B.ttf);
 	LOADSPRITE(data.sprite_test,test.png);
 	return true;
 }
@@ -44,20 +44,25 @@ bool start() {
 	
 	adicionaVariavelDoUsuario("x",0);
 
+	//inicia o input
+	input.up = initKey();
+	input.down = initKey();
+	input.left = initKey();
+	input.right = initKey();
+	input.enter = initKey();
+	input.backspace = initKey();
+	input.text[0] = '\0';
+	input.captureText = false;
+	input.captureFinish = false;
+	input.textUpdate = false;
+	input.caretPos = 0;
+
 	//seleciona a cena inicial. se retornar false, deu algum erro ao carregar
 	if (!sceneSelect(MENU)) {
 		return false;
 	}
 	scene.tempo = -1;
 	scene.exitRequest = false;
-
-	//inicia as teclas
-	input.up = initKey();
-	input.down = initKey();
-	input.left = initKey();
-	input.right = initKey();
-	input.space = initKey();
-	input.esc = initKey();
 
 	return true;
 }
@@ -86,9 +91,6 @@ bool update() {
 	if (!sceneLoaded) {
 		//updates da cena
 		(*scene.update)();
-		if (input.esc->press) {
-			exitGame();
-		}
 		(*scene.draw)();
 
 		//efeito de fade in/out
@@ -100,13 +102,15 @@ bool update() {
 		al_flip_display();
 	}
 
-	//reseta as teclas
+	//reseta o input
 	resetKey(input.up);
 	resetKey(input.down);
 	resetKey(input.left);
 	resetKey(input.right);
-	resetKey(input.space);
-	resetKey(input.esc);
+	resetKey(input.enter);
+	resetKey(input.backspace);
+	input.captureFinish = false;
+	input.textUpdate = false;
 
 	return true;
 }
@@ -173,27 +177,79 @@ int main() {
 	while (1) {
 		ALLEGRO_EVENT ev;
 		al_wait_for_event(game.eventQueue,&ev);
-		if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) break;
-		if (ev.type == ALLEGRO_EVENT_TIMER) {
+		if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+			exitGame();
+		} else if (ev.type == ALLEGRO_EVENT_TIMER) {
 			upd = true;
 		} else if (ev.type == ALLEGRO_EVENT_KEY_DOWN || ev.type == ALLEGRO_EVENT_KEY_UP) {
-			key* k;
-			switch (ev.keyboard.keycode) {
-				case ALLEGRO_KEY_UP: k = input.up; break;
-				case ALLEGRO_KEY_DOWN: k = input.down; break;
-				case ALLEGRO_KEY_LEFT: k = input.left; break;
-				case ALLEGRO_KEY_RIGHT: k = input.right; break;
-				case ALLEGRO_KEY_SPACE: k = input.space; break;
-				case ALLEGRO_KEY_ESCAPE: k = input.esc; break;
-				default: k = NULL; break;
+			if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+				exitGame();
+			} else if (input.captureText) {
+				if (ev.type == ALLEGRO_EVENT_KEY_DOWN && ev.keyboard.keycode == ALLEGRO_KEY_ENTER) {
+					input.captureText = false;
+					input.captureFinish = true;
+					input.enter->press = true;
+					input.enter->hold = true;
+				}
+			} else {
+				key* k;
+				switch (ev.keyboard.keycode) {
+					case ALLEGRO_KEY_UP: k = input.up; break;
+					case ALLEGRO_KEY_DOWN: k = input.down; break;
+					case ALLEGRO_KEY_LEFT: k = input.left; break;
+					case ALLEGRO_KEY_RIGHT: k = input.right; break;
+					case ALLEGRO_KEY_ENTER: k = input.enter; break;
+					case ALLEGRO_KEY_BACKSPACE: k = input.backspace; break;
+					default: k = NULL; break;
+				}
+				if (k != NULL) {
+					if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
+						k->press = true;
+						k->hold = true;
+					} else {
+						k->release = true;
+						k->hold = false;
+					}
+				}
 			}
-			if (k != NULL) {
-				if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
-					k->press = true;
-					k->hold = true;
-				} else {
-					k->release = true;
-					k->hold = false;
+		} else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+			if (input.captureText) {
+				int len = strlen(input.text);
+				if (ev.keyboard.keycode == ALLEGRO_KEY_LEFT) {
+					if (input.caretPos > 0) input.caretPos--;
+				} else if (ev.keyboard.keycode == ALLEGRO_KEY_RIGHT) {
+					if (input.caretPos < len) input.caretPos++;
+				} else if (ev.keyboard.keycode == ALLEGRO_KEY_BACKSPACE) {
+					if (input.caretPos > 0) {
+						for (int a = input.caretPos-1; input.text[a] != '\0'; a++) {
+							input.text[a] = input.text[a+1];
+						}
+						input.caretPos--;
+						input.textUpdate = true;
+					}
+				} else if (ev.keyboard.keycode == ALLEGRO_KEY_DELETE) {
+					if (input.caretPos < len) {
+						for (int a = input.caretPos; input.text[a] != '\0'; a++) {
+							input.text[a] = input.text[a+1];
+						}
+						input.textUpdate = true;
+					}
+				} else if (len < 1023) {
+					char c = ev.keyboard.unichar;
+					if ((c >= 'A' && c <= 'Z')
+						|| (c >= 'a' && c <= 'z')
+						|| (c >= '0' && c <= '9')
+						|| c == ' ' || c == '.' || c == ',' || c == '/' || c == '*'
+						|| c == '(' || c == ')' || c == '+' || c == '-' || c == '^') {
+						if (c == ',') c = '.';
+						for (int a = len; a > input.caretPos; a--) {
+							input.text[a] = input.text[a-1];
+						}
+						input.text[input.caretPos] = c;
+						input.text[len+1] = '\0';
+						input.caretPos++;
+						input.textUpdate = true;
+					}
 				}
 			}
 		}
