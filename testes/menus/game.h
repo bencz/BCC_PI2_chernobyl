@@ -4,51 +4,58 @@
 #include <stdbool.h>
 
 #include <allegro5/allegro.h>
-#include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_font.h>
 
-#define LOADSPRITE(NAME,PATH) \
-	al_set_path_filename(path,"data/sprites/" #PATH); \
-	NAME = al_load_bitmap(al_path_cstr(path,'/')); \
+#define LOADBITMAP(NAME,PATH) \
+	al_set_path_filename(game.path,"data/bitmaps/" #PATH); \
+	NAME = al_load_bitmap(al_path_cstr(game.path,'/')); \
 	if (!NAME) { \
-		fprintf(stderr,"erro: não foi possível carregar o bitmap em data/sprites/" #PATH "\n"); \
+		fprintf(stderr,"erro: não foi possível carregar o bitmap em data/bitmaps/" #PATH "\n"); \
 		return false; \
 	}
 
-#define UNLOADSPRITE(NAME) \
+#define UNLOADBITMAP(NAME) \
 	if (NAME) al_destroy_bitmap(NAME)
 
 #define LOADFONT(NAME,SIZE,PATH) \
-	al_set_path_filename(path,"data/fonts/" #PATH); \
-	NAME = al_load_ttf_font(al_path_cstr(path,'/'),SIZE,0); \
+	al_set_path_filename(game.path,"data/fonts/" #PATH); \
+	NAME = al_load_ttf_font(al_path_cstr(game.path,'/'),SIZE,0); \
 	if (!NAME) { \
 		fprintf(stderr,"erro: não foi possível carregar a fonte em data/fonts/" #PATH "\n"); \
 		return false; \
 	}
 
-#define FPS 60
-#define DELTA 0.0166666666666667
-#define SCREEN_W 960
-#define SCREEN_H 540
+#define UNLOADFONT(NAME) \
+	if (NAME) al_destroy_font(NAME)
 
 struct Game {
 
-	ALLEGRO_DISPLAY *display;
-	ALLEGRO_EVENT_QUEUE *eventQueue;
-	ALLEGRO_TIMER *timer;
+	ALLEGRO_DISPLAY *display; //janela
+	ALLEGRO_EVENT_QUEUE *eventQueue; //fila de eventos
+	ALLEGRO_TIMER *timer; //timer
+	ALLEGRO_PATH *path; //caminho para o .exe
+	
+	int fwidth,fheight; //resolução da janela
+	float idealProp; //proporção ideal da janela
+	int width,height; //resolução com letterboxes
+	int offsetx,offsety; //tamanho das letterboxes
+	float fps,delta; //velocidade do timer
 
 } game;
 
+int px(double x);
+int py(double y);
+
 struct Data {
-
+	
 	//fontes
-	ALLEGRO_FONT *font_regular;
-	ALLEGRO_FONT *font_mono;
-
+	ALLEGRO_FONT *font_UbuntuR;
+	ALLEGRO_FONT *font_UbuntuB;
+	
 	//bitmaps
-	ALLEGRO_BITMAP *sprite_test;
-
+	ALLEGRO_BITMAP *bitmap_test;
+	
 } data;
 
 typedef enum {
@@ -65,6 +72,7 @@ struct Scene {
 	float tempo;
 	SceneID nextScene;
 	bool exitRequest;
+	bool showLetterbox;
 
 	//funções
 	void (*unload)();
@@ -73,35 +81,9 @@ struct Scene {
 
 } scene;
 
-typedef struct key {
-	bool press;
-	bool hold;
-	bool release;
-} key;
-
 void sceneLoad(SceneID id);
-
 bool sceneSelect(SceneID id);
-
 bool sceneForceLoad(SceneID id);
-
 void exitGame();
-
-struct Input {
-
-	key *up;
-	key *down;
-	key *left;
-	key *right;
-	key *enter;
-	key *backspace;
-	
-	char text[1024];
-	bool captureText;
-	bool captureFinish;
-	bool textUpdate;
-	int caretPos;
-
-} input;
 
 #endif

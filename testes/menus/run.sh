@@ -2,6 +2,7 @@
 echo "--"
 gcc main.c \
 game.c \
+input.c \
 menu.c \
 settings.c \
 level.c \

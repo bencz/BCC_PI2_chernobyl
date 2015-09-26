@@ -1,9 +1,18 @@
 #include <stdbool.h>
 
+#include "input.h"
 #include "game.h"
 #include "menu.h"
 #include "settings.h"
 #include "level.h"
+
+int px(double x) {
+	return (int)(x*game.width+game.offsetx);
+}
+
+int py(double y) {
+	return (int)(y*game.height+game.offsety);
+}
 
 void sceneLoad(SceneID id) {
 	if (scene.tempo != 0) return;
@@ -19,8 +28,8 @@ bool sceneSelect(SceneID id) {
 		case MENU: return menu_start();
 		case SETTINGS: return settings_start();
 		case LEVEL: return level_start();
+		default: return false;
 	}
-	return false;
 }
 
 bool sceneForceLoad(SceneID id) {

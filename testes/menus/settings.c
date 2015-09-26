@@ -8,6 +8,7 @@
 #include <math.h>
 
 #include "utils.h"
+#include "input.h"
 #include "game.h"
 
 float pulseTempo;
@@ -24,6 +25,7 @@ bool settings_start() {
 	scene.unload = &settings_unload;
 	scene.update = &settings_update;
 	scene.draw = &settings_draw;
+	scene.showLetterbox = true;
 
 	pulseTempo = 1;
 
@@ -50,12 +52,12 @@ void settings_update() {
 		} else if (input.up->release) {
 			pulseTempo = 1.5;
 		} else if (input.up->hold) {
-			pulseTempo = lerp(pulseTempo,1.1,DELTA*10);
+			pulseTempo = lerp(pulseTempo,1.1,game.delta*10);
 		} else {
-			pulseTempo = lerp(pulseTempo,1,DELTA*10);
+			pulseTempo = lerp(pulseTempo,1,game.delta*10);
 		}
 	} else {
-		pulseTempo = lerp(pulseTempo,1,DELTA*10);
+		pulseTempo = lerp(pulseTempo,1,game.delta*10);
 	}
 }
 
@@ -65,9 +67,10 @@ void settings_draw() {
 	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 
 	//ovelha
-	al_draw_scaled_bitmap(data.sprite_test,0,0,256,256,SCREEN_W/2-pulseTempo*128,SCREEN_H/2-pulseTempo*128,pulseTempo*256,pulseTempo*256,0);
+	float sc = game.height*.25;
+	al_draw_scaled_bitmap(data.bitmap_test,0,0,800,800,px(.5)-pulseTempo*sc*.5,py(.5)-pulseTempo*sc*.5,pulseTempo*sc,pulseTempo*sc,0);
 
 	//textos
-	al_draw_textf(data.font_regular,colorButton,SCREEN_W/2,30,ALLEGRO_ALIGN_CENTRE,"configurações");
-	al_draw_textf(data.font_regular,colorButton2,SCREEN_W/2,SCREEN_H-60,ALLEGRO_ALIGN_CENTRE,"voltar");
+	al_draw_textf(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_textf(data.font_UbuntuR,colorButton2,px(.5),py(.9),ALLEGRO_ALIGN_CENTRE,"voltar");
 }

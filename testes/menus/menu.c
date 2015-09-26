@@ -8,6 +8,7 @@
 #include <math.h>
 
 #include "utils.h"
+#include "input.h"
 #include "game.h"
 
 int selection;
@@ -24,6 +25,7 @@ bool menu_start() {
 	scene.unload = &menu_unload;
 	scene.update = &menu_update;
 	scene.draw = &menu_draw;
+	scene.showLetterbox = true;
 
 	selection = 0;
 
@@ -56,8 +58,8 @@ void menu_draw() {
 	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 
 	//textos
-	al_draw_textf(data.font_regular,colorButton,SCREEN_W/2,30,ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
-	al_draw_textf(data.font_regular,(selection == 0)?colorButton2:colorButton,SCREEN_W/2,SCREEN_H/2-30,ALLEGRO_ALIGN_CENTRE,"jogar");
-	al_draw_textf(data.font_regular,(selection == 1)?colorButton2:colorButton,SCREEN_W/2,SCREEN_H/2,ALLEGRO_ALIGN_CENTRE,"configurações");
-	al_draw_textf(data.font_regular,(selection == 2)?colorButton2:colorButton,SCREEN_W/2,SCREEN_H/2+30,ALLEGRO_ALIGN_CENTRE,"sair");
+	al_draw_textf(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
+	al_draw_textf(data.font_UbuntuR,(selection == 0)?colorButton2:colorButton,px(.5),py(.45),ALLEGRO_ALIGN_CENTRE,"jogar");
+	al_draw_textf(data.font_UbuntuR,(selection == 1)?colorButton2:colorButton,px(.5),py(.5),ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_textf(data.font_UbuntuR,(selection == 2)?colorButton2:colorButton,px(.5),py(.55),ALLEGRO_ALIGN_CENTRE,"sair");
 }

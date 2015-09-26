@@ -10,60 +10,49 @@
 #include <allegro5/allegro_ttf.h>
 
 #include "utils.h"
+#include "input.h"
 #include "game.h"
 #include "menu.h"
 #include "settings.h"
 #include "level.h"
 #include "ParserExpressao.h"
 
+bool loadFonts() {
+	LOADFONT(data.font_UbuntuR,game.height*7/135,Ubuntu-R.ttf);
+	LOADFONT(data.font_UbuntuB,game.height/15,Ubuntu-B.ttf);
+	return true;
+}
+
+void unloadFonts() {
+	UNLOADFONT(data.font_UbuntuR);
+	UNLOADFONT(data.font_UbuntuB);
+}
+
 bool load() {
-	ALLEGRO_PATH *path = al_get_standard_path(ALLEGRO_EXENAME_PATH);
-	LOADFONT(data.font_regular,28,Ubuntu-R.ttf);
-	LOADFONT(data.font_mono,36,UbuntuMono-B.ttf);
-	LOADSPRITE(data.sprite_test,test.png);
+	LOADBITMAP(data.bitmap_test,test.png);
 	return true;
 }
 
 void unload() {
-	UNLOADSPRITE(data.sprite_test);
-}
-
-key *initKey() {
-	key *k = (key*)malloc(sizeof(key));
-	k->press = k->hold = k->release = false;
-	return k;
-}
-
-void resetKey(key *k) {
-	k->press = k->release = false;
+	UNLOADBITMAP(data.bitmap_test);
 }
 
 bool start() {
+	al_set_window_title(game.display,"Projeto Chernobyl");
 	al_clear_to_color(al_map_rgb(0,0,0));
 	al_flip_display();
-	
 	adicionaVariavelDoUsuario("x",0);
-
+	
 	//inicia o input
-	input.up = initKey();
-	input.down = initKey();
-	input.left = initKey();
-	input.right = initKey();
-	input.enter = initKey();
-	input.backspace = initKey();
-	input.text[0] = '\0';
-	input.captureText = false;
-	input.captureFinish = false;
-	input.textUpdate = false;
-	input.caretPos = 0;
-
+	inputStart();
+	
 	//seleciona a cena inicial. se retornar false, deu algum erro ao carregar
 	if (!sceneSelect(MENU)) {
 		return false;
 	}
 	scene.tempo = -1;
 	scene.exitRequest = false;
-
+	
 	return true;
 }
 
@@ -71,7 +60,7 @@ bool update() {
 	//verifica as transições
 	bool sceneLoaded = false;
 	if (scene.tempo > 0) {
-		scene.tempo -= DELTA*1.75;
+		scene.tempo -= game.delta*2.5;
 		if (scene.tempo <= 0) {
 			scene.tempo--;
 			//se retornar false, a janela será fechada
@@ -83,39 +72,148 @@ bool update() {
 			al_flip_display();
 		}
 	} else if (scene.tempo < 0) {
-		scene.tempo += DELTA*1.75;
+		scene.tempo += game.delta*2.5;
 		if (scene.tempo > 0) scene.tempo = 0;
 	}
-
+	
 	//no caso de nenhuma cena nova ter sido chamada
 	if (!sceneLoaded) {
 		//updates da cena
 		(*scene.update)();
 		(*scene.draw)();
-
+		
+		//letterbox
+		//dá pra botar uns gráficos bonitinhos no lugar de faixas pretas chatas
+		if (scene.showLetterbox) {
+			if (game.offsetx > 0) {
+				al_draw_filled_rectangle(0,0,game.offsetx,game.height,al_map_rgb(0,0,0));
+				al_draw_filled_rectangle(game.offsetx+game.width,0,game.fwidth,game.fheight,al_map_rgb(0,0,0));
+			} else if (game.offsety > 0) {
+				al_draw_filled_rectangle(0,0,game.width,game.offsety,al_map_rgb(0,0,0));
+				al_draw_filled_rectangle(0,game.offsety+game.height,game.fwidth,game.fheight,al_map_rgb(0,0,0));
+			}
+		}
+		
 		//efeito de fade in/out
 		if (scene.tempo > 0) {
-			al_draw_filled_rectangle(0,0,SCREEN_W,SCREEN_H,al_map_rgba_f(0,0,0,ease((1-scene.tempo)*1.125)));
+			al_draw_filled_rectangle(0,0,game.fwidth,game.fheight,al_map_rgba_f(0,0,0,ease((1-scene.tempo)*1.125)));
 		} else if (scene.tempo < 0) {
-			al_draw_filled_rectangle(0,0,SCREEN_W,SCREEN_H,al_map_rgba_f(0,0,0,ease(-scene.tempo*1.125)));
+			al_draw_filled_rectangle(0,0,game.fwidth,game.fheight,al_map_rgba_f(0,0,0,ease(-scene.tempo*1.125)));
 		}
+		
 		al_flip_display();
 	}
 
-	//reseta o input
-	resetKey(input.up);
-	resetKey(input.down);
-	resetKey(input.left);
-	resetKey(input.right);
-	resetKey(input.enter);
-	resetKey(input.backspace);
-	input.captureFinish = false;
-	input.textUpdate = false;
+	//atualiza o input
+	inputUpdate();
 
 	return true;
 }
 
-int main() {
+void calculateWindowSize() {
+	float prop = (float)game.fwidth/game.fheight;
+	if (prop > game.idealProp+.01) {
+		game.width = (int)round(game.fheight*game.idealProp);
+		game.height = game.fheight;
+		game.offsetx = (game.fwidth-game.width)/2;
+		game.offsety = 0;
+	} else if (prop < game.idealProp-.01) {
+		game.width = game.fwidth;
+		game.height = (int)round(game.fwidth/game.idealProp);
+		game.offsetx = 0;
+		game.offsety = (game.fheight-game.height)/2;
+	} else {
+		game.width = game.fwidth;
+		game.height = game.fheight;
+		game.offsetx = game.offsety = 0;
+	}
+	printf("janela: %dx%d (%dx%d)",game.fwidth,game.fheight,game.width,game.height);
+}
+
+void getArgs(int argc,char **args) {
+	//analisa os argumentos recebidos.
+	//-w diz a largura da janela;
+	//-h diz a altura;
+	//-s diz a largura x altura.
+	bool isWidth;
+	int a,b,m,n;
+	for (a = 0; a < argc; a++) {
+		if (args[a][0] != '-') continue;
+		if ((args[a][1] == 'w' || args[a][1] == 'W') && args[a][2] == '=') {
+			n = 0;
+			for (b = 3; args[a][b] != '\0'; b++) {
+				if (args[a][b] < '0' || args[a][b] > '9') {
+					n = 0;
+					break;
+				}
+				n = (n*10)+(args[a][b]-'0');
+			}
+			if (n > 0) {
+				game.fwidth = n;
+			}
+		} else if ((args[a][1] == 'h' || args[a][1] == 'H') && args[a][2] == '=') {
+			n = 0;
+			for (b = 3; args[a][b] != '\0'; b++) {
+				if (args[a][b] < '0' || args[a][b] > '9') {
+					n = 0;
+					break;
+				}
+				n = (n*10)+(args[a][b]-'0');
+			}
+			if (n > 0) {
+				game.fheight = n;
+			}
+		} else if ((args[a][1] == 's' || args[a][1] == 'S') && args[a][2] == '=') {
+			m = 0;
+			n = 0;
+			isWidth = true;
+			for (b = 3; args[a][b] != '\0'; b++) {
+				if (args[a][b] < '0' || args[a][b] > '9') {
+					if (isWidth && (args[a][b] == 'x' || args[a][b] == 'X')) {
+						isWidth = false;
+						continue;
+					}
+					m = n = 0;
+					break;
+				}
+				if (isWidth) {
+					m = (m*10)+(args[a][b]-'0');
+				} else {
+					n = (n*10)+(args[a][b]-'0');
+				}
+			}
+			if (m > 0 && n > 0) {
+				game.fwidth = m;
+				game.fheight = n;
+			}
+		}
+	}
+}
+
+int main(int argc,char **args) {
+	game.fwidth = game.fheight = 0;
+	getArgs(argc,args);
+	
+	//cálculo inicial da resolução, e outras coisas
+	game.idealProp = 16.0/9.0;
+	if (game.fwidth <= 0) {
+		if (game.fheight <= 0) {
+			game.fwidth = 960;
+			game.fheight = 540;
+		} else {
+			game.fwidth = (int)round(game.fheight*game.idealProp);
+		}
+	} else if (game.fheight <= 0) {
+		game.fheight = (int)round(game.fwidth/game.idealProp);
+	}
+	al_set_new_display_flags(ALLEGRO_WINDOWED);
+	al_set_new_display_flags(ALLEGRO_RESIZABLE);
+	calculateWindowSize();
+	
+	//timer
+	game.fps = 60;
+	game.delta = 1.0/game.fps;
+	
 	//inicia tudo q o alegro precisa pra iniciar
 	if (!al_init()) {
 		fprintf(stderr,"erro: o allegro não pôde ser inicializado\n");
@@ -139,12 +237,12 @@ int main() {
 	}
 	al_init_font_addon();
 	al_init_ttf_addon();
-	game.timer = al_create_timer(DELTA);
+	game.timer = al_create_timer(game.delta);
 	if (!game.timer) {
 		fprintf(stderr,"erro: o timer não pôde ser criado\n");
 		return -1;
 	}
-	game.display = al_create_display(SCREEN_W,SCREEN_H);
+	game.display = al_create_display(game.fwidth,game.fheight);
 	if (!game.display) {
 		fprintf(stderr,"erro: o display não pôde ser criado\n");
 		al_destroy_timer(game.timer);
@@ -161,16 +259,18 @@ int main() {
 	al_register_event_source(game.eventQueue,al_get_timer_event_source(game.timer));
 	al_register_event_source(game.eventQueue,al_get_mouse_event_source());
 	al_register_event_source(game.eventQueue,al_get_keyboard_event_source());
-
+	
 	//início do programa
-	if (!load() || !start()) {
+	game.path = al_get_standard_path(ALLEGRO_EXENAME_PATH);
+	if (!load() || !loadFonts() || !start()) {
 		unload();
+		unloadFonts();
 		al_destroy_timer(game.timer);
 		al_destroy_display(game.display);
 		al_destroy_event_queue(game.eventQueue);
 		return -1;
 	}
-
+	
 	//update
 	al_start_timer(game.timer);
 	bool upd = true;
@@ -181,77 +281,22 @@ int main() {
 			exitGame();
 		} else if (ev.type == ALLEGRO_EVENT_TIMER) {
 			upd = true;
+		} else if (ev.type == ALLEGRO_EVENT_DISPLAY_RESIZE) {
+			al_acknowledge_resize(game.display);
+			game.fwidth = al_get_display_width(game.display);
+			game.fheight = al_get_display_height(game.display);
+			int lastHeight = game.height;
+			calculateWindowSize();
+			if (lastHeight != game.height) {
+				unloadFonts();
+				if (!loadFonts()) {
+					break;
+				}
+			}
 		} else if (ev.type == ALLEGRO_EVENT_KEY_DOWN || ev.type == ALLEGRO_EVENT_KEY_UP) {
-			if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-				exitGame();
-			} else if (input.captureText) {
-				if (ev.type == ALLEGRO_EVENT_KEY_DOWN && ev.keyboard.keycode == ALLEGRO_KEY_ENTER) {
-					input.captureText = false;
-					input.captureFinish = true;
-					input.enter->press = true;
-					input.enter->hold = true;
-				}
-			} else {
-				key* k;
-				switch (ev.keyboard.keycode) {
-					case ALLEGRO_KEY_UP: k = input.up; break;
-					case ALLEGRO_KEY_DOWN: k = input.down; break;
-					case ALLEGRO_KEY_LEFT: k = input.left; break;
-					case ALLEGRO_KEY_RIGHT: k = input.right; break;
-					case ALLEGRO_KEY_ENTER: k = input.enter; break;
-					case ALLEGRO_KEY_BACKSPACE: k = input.backspace; break;
-					default: k = NULL; break;
-				}
-				if (k != NULL) {
-					if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
-						k->press = true;
-						k->hold = true;
-					} else {
-						k->release = true;
-						k->hold = false;
-					}
-				}
-			}
+			inputKeyPress(ev);
 		} else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
-			if (input.captureText) {
-				int len = strlen(input.text);
-				if (ev.keyboard.keycode == ALLEGRO_KEY_LEFT) {
-					if (input.caretPos > 0) input.caretPos--;
-				} else if (ev.keyboard.keycode == ALLEGRO_KEY_RIGHT) {
-					if (input.caretPos < len) input.caretPos++;
-				} else if (ev.keyboard.keycode == ALLEGRO_KEY_BACKSPACE) {
-					if (input.caretPos > 0) {
-						for (int a = input.caretPos-1; input.text[a] != '\0'; a++) {
-							input.text[a] = input.text[a+1];
-						}
-						input.caretPos--;
-						input.textUpdate = true;
-					}
-				} else if (ev.keyboard.keycode == ALLEGRO_KEY_DELETE) {
-					if (input.caretPos < len) {
-						for (int a = input.caretPos; input.text[a] != '\0'; a++) {
-							input.text[a] = input.text[a+1];
-						}
-						input.textUpdate = true;
-					}
-				} else if (len < 1023) {
-					char c = ev.keyboard.unichar;
-					if ((c >= 'A' && c <= 'Z')
-						|| (c >= 'a' && c <= 'z')
-						|| (c >= '0' && c <= '9')
-						|| c == ' ' || c == '.' || c == ',' || c == '/' || c == '*'
-						|| c == '(' || c == ')' || c == '+' || c == '-' || c == '^') {
-						if (c == ',') c = '.';
-						for (int a = len; a > input.caretPos; a--) {
-							input.text[a] = input.text[a-1];
-						}
-						input.text[input.caretPos] = c;
-						input.text[len+1] = '\0';
-						input.caretPos++;
-						input.textUpdate = true;
-					}
-				}
-			}
+			inputKeyChar(ev);
 		}
 		if (upd && al_is_event_queue_empty(game.eventQueue)) {
 			upd = false;
@@ -260,10 +305,11 @@ int main() {
 			}
 		}
 	}
-
+	
 	//fim do programa
 	(*scene.unload)();
 	unload();
+	unloadFonts();
 	al_destroy_timer(game.timer);
 	al_destroy_display(game.display);
 	al_destroy_event_queue(game.eventQueue);
