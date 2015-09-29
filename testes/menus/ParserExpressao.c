@@ -93,6 +93,7 @@ static int nUserFuncs;
 static VarTable varTable[MAX_VARIABLE];
 static int nVars;
 
+static CodigoErro numeroDoErro;
 static bool temErro;
 static int iCurPos;
 static char FParseText[MAX_FORMULA_LEN];
@@ -223,7 +224,7 @@ int adicionaVariavelDoUsuario(const char *name, double value)
 	if (nVars == MAX_VARIABLE - 1)
 	{
 		temErro = 1;
-		fprintf(stderr, "Indice da vari·vel fora dos limites!\n");
+		fprintf(stderr, "Indice da vari√°vel fora dos limites!\n");
 		return -1;
 	}
 
@@ -489,7 +490,8 @@ void registraFuncaoDoUsuario(char *funcName, UserFunction proc)
 		else
 		{
 			temErro = 1;
-			fprintf(stderr, "Erro do analisador!\n");
+			numeroDoErro = erro_analisador;
+			//fprintf(stderr, "Erro do analisador de expressao!\n");
 		}
 	}
 }
@@ -513,7 +515,8 @@ double Factor()
       if (FParseText[iCurPos] != ')')
         {
           temErro = 1;
-          fprintf(stderr, "Parenteses nao coicidem!\n");
+          numeroDoErro = parenteses_nao_coincidem;
+		  //fprintf(stderr, "Parenteses nao coicidem!\n");
           return -1; 
         }
       iCurPos++;
@@ -545,7 +548,8 @@ double Factor()
                       if (FParseText[iCurPos] != ')')
                         {
                           temErro = 1;
-                          fprintf(stderr, "Faltou um ')'!\n");
+                          numeroDoErro = parenteses_direito;
+						  //fprintf(stderr, "Faltou um ')'!\n");
                           return -1; 
                         }
                       iCurPos++;
@@ -563,7 +567,8 @@ double Factor()
                                         if (cos(Value) <=  EPSILON) 
                                           {
                                             temErro = 1;
-                                            fprintf(stderr, "Impossivel calcular a tangente de 90!\n");
+											numeroDoErro = tangente_noventa;
+                                            //fprintf(stderr, "Impossivel calcular a tangente de 90!\n");
                                             return -1; 
                                           }
                                         else
@@ -577,7 +582,8 @@ double Factor()
                                         if (Value <= EPSILON)
                                           {
                                             temErro = 1;
-                                            fprintf(stderr, "O valor de LN tem que ser maior que EPSILON!\n");
+                                            numeroDoErro = ln_ep;
+											//fprintf(stderr, "O valor de LN tem que ser maior que EPSILON!\n");
                                             return -1; 
                                           }
                                         else
@@ -588,7 +594,8 @@ double Factor()
                                         if (Value <= 0)
                                           {
                                             temErro = 1;
-                                            fprintf(stderr, "Impossivel calcular o Log com valores menores ou iguais a 0!\n");
+                                            numeroDoErro = log_zero;
+											//fprintf(stderr, "Impossivel calcular o Log com valores menores ou iguais a 0!\n");
                                             return -1; 
                                           }
                                         else
@@ -599,7 +606,8 @@ double Factor()
                                         if (Value < 0)
                                           {
                                             temErro = 1;
-                                            fprintf(stderr, "Impossivel calcular raiz quadrada de numero menores que 0!\n");
+                                            numeroDoErro = raiz_negativa;
+											//fprintf(stderr, "Impossivel calcular raiz quadrada de numero menores que 0!\n");
                                             return -1; 
                                           }
                                         else
@@ -610,7 +618,8 @@ double Factor()
                                         if (Value < 0)
                                           {
                                             temErro = 1;
-                                            fprintf(stderr, "Para calcular o fatorial o numero deve ser maior que 0!\n");
+											numeroDoErro = fatorial_nao_pode_zero;
+                                            //fprintf(stderr, "Para calcular o fatorial o numero deve ser maior que 0!\n");
                                             return -1;
                                           }
                                         else
@@ -630,7 +639,8 @@ double Factor()
                           if (FParseText[iCurPos] != ')')
                             {
                               temErro = 1;
-                              fprintf(stderr, "Faltou um ')'\n");
+							  numeroDoErro = parenteses_direito;
+                              //fprintf(stderr, "Faltou um ')'\n");
                               return -1; 
                             }
 
@@ -639,7 +649,8 @@ double Factor()
                       else
                         {
                           temErro = 1;
-                          fprintf(stderr, "Erro de sintaxe!\n");
+                          numeroDoErro = erro_sintaxe;
+						  //fprintf(stderr, "Erro de sintaxe!\n");
                           return -1;
                         }
                 }
@@ -663,14 +674,15 @@ double Term()
 		case '*': Value = Value * Factor(); break;
 		case '^': Value = pow(Value, Factor()); break;
 		case '/':
-			/*tmpValue = Factor();
-			 if (tmpValue <= EPSILON)
+			tmpValue = Factor();
+			if (tmpValue <= EPSILON)
 			{
 				temErro = 1;
-				fprintf(stderr, "Divis„o por 0! ( Term )\n");
+				numeroDoErro = divisao_por_zero;
+				//fprintf(stderr, "Divis√£o por 0! ( Term )\n");
 				return -1;
-			} */
-			Value = Value / Factor();
+			} 
+			Value = Value / tmpValue;
 			break;
 		}
 	}
@@ -723,18 +735,21 @@ double calcula(const char *formula)
 	char sParseText[MAX_FORMULA_LEN];
 
 	temErro = 0;
+	numeroDoErro = ok;
 
 	if (!formula || '\0' == *formula)
 	{
 		temErro = 1;
-		fprintf(stderr, "Expressao vazia\n");
+		numeroDoErro = expressao_vazia;
+		//fprintf(stderr, "Expressao vazia\n");
 		return 0;
 	}
 
 	if (strlen(formula) >= MAX_FORMULA_LEN)
 	{
 		temErro = 1;
-		fprintf(stderr, "Comprimento expressıes eh maior que o maximo!\n");
+		numeroDoErro = tamanho_maximo;
+		//fprintf(stderr, "Comprimento express√µes eh maior que o maximo!\n");
 		return 0;
 	}
 
@@ -747,7 +762,8 @@ double calcula(const char *formula)
 	if (0 == strlen(sFormula))
 	{
 		temErro = 1;
-		fprintf(stderr, "Expressao vazia!\n");
+		numeroDoErro = expressao_vazia;
+		//fprintf(stderr, "Expressao vazia!\n");
 		return 0;
 	}
 
@@ -770,7 +786,8 @@ double calcula(const char *formula)
 	if (j != 0)
 	{
 		temErro = 1;
-		fprintf(stderr, "Os parenteses nao coincidem!\n");
+		numeroDoErro = parenteses_nao_coincidem;
+		//fprintf(stderr, "Os parenteses nao coincidem!\n");
 		return 0;
 	}
 
@@ -816,4 +833,9 @@ double calcula(const char *formula)
 int TemErro()
 {
 	return temErro;
+}
+
+CodigoErro PegaCodigoErro()
+{
+	return numeroDoErro;
 }
