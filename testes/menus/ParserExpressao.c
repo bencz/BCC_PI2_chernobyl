@@ -675,7 +675,7 @@ double Term()
 		case '^': Value = pow(Value, Factor()); break;
 		case '/':
 			tmpValue = Factor();
-			if (tmpValue <= EPSILON)
+			if (fabs(tmpValue) <= EPSILON)
 			{
 				temErro = 1;
 				numeroDoErro = divisao_por_zero;

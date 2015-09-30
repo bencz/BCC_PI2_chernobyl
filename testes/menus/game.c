@@ -14,6 +14,14 @@ int py(double y) {
 	return (int)(y*game.height+game.offsety);
 }
 
+double ix(int x) {
+	return (double)(x-game.offsetx)/game.width;
+}
+
+double iy(int y) {
+	return (double)(y-game.offsety)/game.height;
+}
+
 void sceneLoad(SceneID id) {
 	if (scene.tempo != 0) return;
 	//prepara a transição para a cena escolhida

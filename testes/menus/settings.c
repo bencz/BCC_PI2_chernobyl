@@ -71,6 +71,6 @@ void settings_draw() {
 	al_draw_scaled_bitmap(data.bitmap_test,0,0,800,800,px(.5)-pulseTempo*sc*.5,py(.5)-pulseTempo*sc*.5,pulseTempo*sc,pulseTempo*sc,0);
 
 	//textos
-	al_draw_textf(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"configurações");
-	al_draw_textf(data.font_UbuntuR,colorButton2,px(.5),py(.9),ALLEGRO_ALIGN_CENTRE,"voltar");
+	al_draw_text(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_text(data.font_UbuntuR,colorButton2,px(.5),py(.9),ALLEGRO_ALIGN_CENTRE,"voltar");
 }

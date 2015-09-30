@@ -29,6 +29,12 @@
 #define UNLOADFONT(NAME) \
 	if (NAME) al_destroy_font(NAME)
 
+#define BLENDDEFAULT() \
+	al_set_blender(ALLEGRO_ADD,ALLEGRO_ONE,ALLEGRO_INVERSE_ALPHA)
+
+#define BLENDALPHA() \
+	al_set_blender(ALLEGRO_ADD,ALLEGRO_ALPHA,ALLEGRO_INVERSE_ALPHA)
+
 struct Game {
 
 	ALLEGRO_DISPLAY *display; //janela
@@ -44,8 +50,11 @@ struct Game {
 
 } game;
 
-int px(double x);
+int px(double x); //converte a porcentagem pro espaço da tela em pixels
 int py(double y);
+
+double ix(int x); //converte de pixels pra uma porcentagem de acordo com o espaço da tela
+double iy(int y);
 
 struct Data {
 	

@@ -3,11 +3,14 @@
 
 #include <stdbool.h>
 
+#include <allegro5/allegro.h>
+
 typedef struct key {
 	
 	bool press;
 	bool hold;
 	bool release;
+	bool repeat;
 	
 } key;
 

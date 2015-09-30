@@ -18,12 +18,12 @@ CharType getCharType(char c) {
 
 key *initKey() {
 	key *k = (key*)malloc(sizeof(key));
-	k->press = k->hold = k->release = false;
+	k->press = k->hold = k->release = k->repeat = false;
 	return k;
 }
 
 void resetKey(key *k) {
-	k->press = k->release = false;
+	k->press = k->release = k->repeat = false;
 }
 
 void inputStart() {
@@ -82,6 +82,8 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 			if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
 				k->press = true;
 				k->hold = true;
+			} else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+				k->repeat = true;
 			} else {
 				k->release = true;
 				k->hold = false;
@@ -90,108 +92,132 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 	}
 }
 
-void inputKeyChar(ALLEGRO_EVENT ev) {input.caretBlink = 0;
-	if (input.captureText) {
-		int len = strlen(input.text);
-		if (ev.keyboard.keycode == ALLEGRO_KEY_LEFT) {
-			//aperta para a esquerda
-			int prev = input.caretPos;
-			if (input.caretPos > 0) {
-				if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) {
-					CharType ct = getCharType(input.text[input.caretPos-1]);
-					do {
-						input.caretPos--;
-					} while (input.caretPos > 0 && getCharType(input.text[input.caretPos-1]) == ct);
-				} else {
+void inputKeyChar(ALLEGRO_EVENT ev) {
+	input.caretBlink = 0;
+	int len = strlen(input.text);
+	if (ev.keyboard.keycode == ALLEGRO_KEY_LEFT) {
+		//aperta para a esquerda
+		int prev = input.caretPos;
+		if (input.caretPos > 0) {
+			if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) {
+				CharType ct = getCharType(input.text[input.caretPos-1]);
+				do {
 					input.caretPos--;
-				}
-			}
-			if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-				if (prev == input.caretPos) {
-				} else if (input.selectionStart == -1) {
-					input.selectionStart = input.caretPos;
-					input.selectionEnd = prev;
-				} else if (prev > input.selectionStart && input.caretPos <= input.selectionStart) {
-					input.selectionEnd = input.selectionStart;
-					input.selectionStart = input.caretPos;
-				} else if (input.caretPos >= input.selectionStart) {
-					input.selectionEnd = input.caretPos;
-				} else {
-					input.selectionStart = input.caretPos;
-				}
-				if (input.selectionStart == input.selectionEnd) {
-					input.selectionStart = -1;
-				}
+				} while (input.caretPos > 0 && getCharType(input.text[input.caretPos-1]) == ct);
 			} else {
-				input.selectionStart = -1;
-			}
-		} else if (ev.keyboard.keycode == ALLEGRO_KEY_RIGHT) {
-			//aperta para a direita
-			int prev = input.caretPos;
-			if (input.caretPos < len) {
-				if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) {
-					CharType ct = getCharType(input.text[input.caretPos]);
-					do {
-						input.caretPos++;
-					} while (input.caretPos < len && getCharType(input.text[input.caretPos]) == ct);
-				} else {
-					input.caretPos++;
-				}
-			}
-			if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-				if (prev == input.caretPos) {
-				} else if (input.selectionStart == -1) {
-					input.selectionStart = prev;
-					input.selectionEnd = input.caretPos;
-				} else if (prev < input.selectionEnd && input.caretPos >= input.selectionEnd) {
-					input.selectionStart = input.selectionEnd;
-					input.selectionEnd = input.caretPos;
-				} else if (input.caretPos <= input.selectionEnd) {
-					input.selectionStart = input.caretPos;
-				} else {
-					input.selectionEnd = input.caretPos;
-				}
-				if (input.selectionStart == input.selectionEnd) {
-					input.selectionStart = -1;
-				}
-			} else {
-				input.selectionStart = -1;
-			}
-		} else if (ev.keyboard.keycode == ALLEGRO_KEY_BACKSPACE) {
-			//apaga com backspace
-			if (input.selectionStart == -1 && (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) && input.caretPos > 0) {
-				input.selectionStart = input.selectionEnd = input.caretPos;
-				CharType ct = getCharType(input.text[input.selectionStart-1]);
-				do {
-					input.selectionStart--;
-				} while (input.caretPos > 0 && getCharType(input.text[input.selectionStart-1]) == ct);
-			}
-			if (input.selectionStart != -1) {
-				input.caretPos = input.selectionStart;
-				do {
-					input.text[input.selectionStart] = input.text[input.selectionEnd];
-					input.selectionStart++;
-					input.selectionEnd++;
-				} while (input.text[input.selectionEnd-1] != '\0');
-				input.selectionStart = -1;
-				input.textUpdate = true;
-			} else if (input.caretPos > 0) {
 				input.caretPos--;
-				for (int a = input.caretPos; input.text[a] != '\0'; a++) {
-					input.text[a] = input.text[a+1];
-				}
-				input.textUpdate = true;
 			}
-		} else if (ev.keyboard.keycode == ALLEGRO_KEY_DELETE) {
-			//apaga com delete
-			if (input.selectionStart == -1 && (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) && input.caretPos < len) {
-				input.selectionStart = input.selectionEnd = input.caretPos;
-				CharType ct = getCharType(input.text[input.selectionEnd]);
+		}
+		if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+			if (prev == input.caretPos) {
+			} else if (input.selectionStart == -1) {
+				input.selectionStart = input.caretPos;
+				input.selectionEnd = prev;
+			} else if (prev > input.selectionStart && input.caretPos <= input.selectionStart) {
+				input.selectionEnd = input.selectionStart;
+				input.selectionStart = input.caretPos;
+			} else if (input.caretPos >= input.selectionStart) {
+				input.selectionEnd = input.caretPos;
+			} else {
+				input.selectionStart = input.caretPos;
+			}
+			if (input.selectionStart == input.selectionEnd) {
+				input.selectionStart = -1;
+			}
+		} else {
+			input.selectionStart = -1;
+		}
+	} else if (ev.keyboard.keycode == ALLEGRO_KEY_RIGHT) {
+		//aperta para a direita
+		int prev = input.caretPos;
+		if (input.caretPos < len) {
+			if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) {
+				CharType ct = getCharType(input.text[input.caretPos]);
 				do {
-					input.selectionEnd++;
-				} while (input.caretPos < len && getCharType(input.text[input.selectionEnd]) == ct);
-				input.textUpdate = true;
+					input.caretPos++;
+				} while (input.caretPos < len && getCharType(input.text[input.caretPos]) == ct);
+			} else {
+				input.caretPos++;
 			}
+		}
+		if (ev.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+			if (prev == input.caretPos) {
+			} else if (input.selectionStart == -1) {
+				input.selectionStart = prev;
+				input.selectionEnd = input.caretPos;
+			} else if (prev < input.selectionEnd && input.caretPos >= input.selectionEnd) {
+				input.selectionStart = input.selectionEnd;
+				input.selectionEnd = input.caretPos;
+			} else if (input.caretPos <= input.selectionEnd) {
+				input.selectionStart = input.caretPos;
+			} else {
+				input.selectionEnd = input.caretPos;
+			}
+			if (input.selectionStart == input.selectionEnd) {
+				input.selectionStart = -1;
+			}
+		} else {
+			input.selectionStart = -1;
+		}
+	} else if (ev.keyboard.keycode == ALLEGRO_KEY_BACKSPACE) {
+		//apaga com backspace
+		if (input.selectionStart == -1 && (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) && input.caretPos > 0) {
+			input.selectionStart = input.selectionEnd = input.caretPos;
+			CharType ct = getCharType(input.text[input.selectionStart-1]);
+			do {
+				input.selectionStart--;
+			} while (input.caretPos > 0 && getCharType(input.text[input.selectionStart-1]) == ct);
+		}
+		if (input.selectionStart != -1) {
+			input.caretPos = input.selectionStart;
+			do {
+				input.text[input.selectionStart] = input.text[input.selectionEnd];
+				input.selectionStart++;
+				input.selectionEnd++;
+			} while (input.text[input.selectionEnd-1] != '\0');
+			input.selectionStart = -1;
+			input.textUpdate = true;
+		} else if (input.caretPos > 0) {
+			input.caretPos--;
+			for (int a = input.caretPos; input.text[a] != '\0'; a++) {
+				input.text[a] = input.text[a+1];
+			}
+			input.textUpdate = true;
+		}
+	} else if (ev.keyboard.keycode == ALLEGRO_KEY_DELETE) {
+		//apaga com delete
+		if (input.selectionStart == -1 && (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) && input.caretPos < len) {
+			input.selectionStart = input.selectionEnd = input.caretPos;
+			CharType ct = getCharType(input.text[input.selectionEnd]);
+			do {
+				input.selectionEnd++;
+			} while (input.caretPos < len && getCharType(input.text[input.selectionEnd]) == ct);
+		}
+		if (input.selectionStart != -1) {
+			input.caretPos = input.selectionStart;
+			do {
+				input.text[input.selectionStart] = input.text[input.selectionEnd];
+				input.selectionStart++;
+				input.selectionEnd++;
+			} while (input.text[input.selectionEnd-1] != '\0');
+			input.selectionStart = -1;
+			input.textUpdate = true;
+		} else if (input.caretPos < len) {
+			for (int a = input.caretPos; input.text[a] != '\0'; a++) {
+				input.text[a] = input.text[a+1];
+			}
+			input.textUpdate = true;
+		}
+	} else if (ev.keyboard.keycode == ALLEGRO_KEY_A && (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL)) {
+		//ctrl+a
+		if (len > 0) {
+			input.selectionStart = 0;
+			input.selectionEnd = input.caretPos = len;
+		}
+	} else if (len < 1023) {
+		//digita alguma coisa
+		char c = ev.keyboard.unichar;
+		if (getCharType(c) != CHAR_INVALID) {
 			if (input.selectionStart != -1) {
 				input.caretPos = input.selectionStart;
 				do {
@@ -200,40 +226,15 @@ void inputKeyChar(ALLEGRO_EVENT ev) {input.caretBlink = 0;
 					input.selectionEnd++;
 				} while (input.text[input.selectionEnd-1] != '\0');
 				input.selectionStart = -1;
-			} else if (input.caretPos < len) {
-				for (int a = input.caretPos; input.text[a] != '\0'; a++) {
-					input.text[a] = input.text[a+1];
-				}
-				input.textUpdate = true;
 			}
-		} else if (ev.keyboard.keycode == ALLEGRO_KEY_A && (ev.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL)) {
-			//ctrl+a
-			if (len > 0) {
-				input.selectionStart = 0;
-				input.selectionEnd = input.caretPos = len;
+			if (c == ',') c = '.';
+			for (int a = len; a > input.caretPos; a--) {
+				input.text[a] = input.text[a-1];
 			}
-		} else if (len < 1023) {
-			//digita alguma coisa
-			char c = ev.keyboard.unichar;
-			if (getCharType(c) != CHAR_INVALID) {
-				if (input.selectionStart != -1) {
-					input.caretPos = input.selectionStart;
-					do {
-						input.text[input.selectionStart] = input.text[input.selectionEnd];
-						input.selectionStart++;
-						input.selectionEnd++;
-					} while (input.text[input.selectionEnd-1] != '\0');
-					input.selectionStart = -1;
-				}
-				if (c == ',') c = '.';
-				for (int a = len; a > input.caretPos; a--) {
-					input.text[a] = input.text[a-1];
-				}
-				input.text[input.caretPos] = c;
-				input.text[len+1] = '\0';
-				input.caretPos++;
-				input.textUpdate = true;
-			}
+			input.text[input.caretPos] = c;
+			input.text[len+1] = '\0';
+			input.caretPos++;
+			input.textUpdate = true;
 		}
 	}
 }

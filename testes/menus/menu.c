@@ -42,8 +42,8 @@ void menu_unload() {
 
 void menu_update() {
 	if (scene.tempo <= 0) {
-		if (input.up->press && selection > 0) selection--;
-		if (input.down->press && selection < 2) selection++;
+		if (input.up->repeat && selection > 0) selection--;
+		if (input.down->repeat && selection < 2) selection++;
 		if (input.enter->press) switch (selection) {
 			case 0: sceneLoad(LEVEL);
 			case 1: sceneLoad(SETTINGS);
@@ -58,8 +58,8 @@ void menu_draw() {
 	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 
 	//textos
-	al_draw_textf(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
-	al_draw_textf(data.font_UbuntuR,(selection == 0)?colorButton2:colorButton,px(.5),py(.45),ALLEGRO_ALIGN_CENTRE,"jogar");
-	al_draw_textf(data.font_UbuntuR,(selection == 1)?colorButton2:colorButton,px(.5),py(.5),ALLEGRO_ALIGN_CENTRE,"configurações");
-	al_draw_textf(data.font_UbuntuR,(selection == 2)?colorButton2:colorButton,px(.5),py(.55),ALLEGRO_ALIGN_CENTRE,"sair");
+	al_draw_text(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
+	al_draw_text(data.font_UbuntuR,(selection == 0)?colorButton2:colorButton,px(.5),py(.45),ALLEGRO_ALIGN_CENTRE,"jogar");
+	al_draw_text(data.font_UbuntuR,(selection == 1)?colorButton2:colorButton,px(.5),py(.5),ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_text(data.font_UbuntuR,(selection == 2)?colorButton2:colorButton,px(.5),py(.55),ALLEGRO_ALIGN_CENTRE,"sair");
 }

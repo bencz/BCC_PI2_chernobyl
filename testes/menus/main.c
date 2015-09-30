@@ -127,7 +127,7 @@ void calculateWindowSize() {
 		game.height = game.fheight;
 		game.offsetx = game.offsety = 0;
 	}
-	printf("janela: %dx%d (%dx%d)",game.fwidth,game.fheight,game.width,game.height);
+	printf("janela: %dx%d (%dx%d)\n",game.fwidth,game.fheight,game.width,game.height);
 }
 
 void getArgs(int argc,char **args) {
@@ -236,7 +236,11 @@ int main(int argc,char **args) {
 		return -1;
 	}
 	al_init_font_addon();
-	al_init_ttf_addon();
+	if (!al_init_ttf_addon()) {
+		fprintf(stderr,"erro: o addon ttf não pôde ser inicializado\n");
+		return -1;
+	}
+	
 	game.timer = al_create_timer(game.delta);
 	if (!game.timer) {
 		fprintf(stderr,"erro: o timer não pôde ser criado\n");
@@ -293,10 +297,14 @@ int main(int argc,char **args) {
 					break;
 				}
 			}
-		} else if (ev.type == ALLEGRO_EVENT_KEY_DOWN || ev.type == ALLEGRO_EVENT_KEY_UP) {
-			inputKeyPress(ev);
-		} else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
-			inputKeyChar(ev);
+		} else if (ev.type == ALLEGRO_EVENT_KEY_DOWN
+				|| ev.type == ALLEGRO_EVENT_KEY_UP
+				|| ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+			if (input.captureText && ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+				inputKeyChar(ev);
+			} else {
+				inputKeyPress(ev);
+			}
 		}
 		if (upd && al_is_event_queue_empty(game.eventQueue)) {
 			upd = false;
