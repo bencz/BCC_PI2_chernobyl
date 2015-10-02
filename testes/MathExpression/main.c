@@ -1,25 +1,21 @@
 #include <stdio.h>
-//#include <windows.h>
-#include "ParserExpressao.h"
-
-double Multiplica_por_4(double value)
-{
-	return value * 4;
-}
+#include "parserexpressao.h"
 
 int main(int argc, char *argv[])
 {
+	int flag = 0, errorCode = 10;
 	double result;
-
-	result = calcula("log(-1)");
-	
-	if(TemErro() && PegaCodigoErro() != ok)
-	{
-		//printf("%f\n", result);
-		printf("Erro: %s\n", MensagemDoErro[PegaCodigoErro()]);
-	}
-	//printf("Resultado: %f\n", result);
-
+	double valor = 10;
+	char *expr = "sinr(x)";
+  
+  setavariavel("x", &valor);
+  errorCode = calcula(expr, &result, &flag);
+  
+  printf("Codigo de erro: %d\n", errorCode);
+  if(errorCode != E_OK)
+    printf("Mensagem de erro: %s\n", mensagensDeErro[errorCode-1]);
+  printf("Flag: %d\n", flag);
+  printf("Resultado: %f\n", result);
 
 	return 0;
 }
