@@ -53,6 +53,9 @@ struct Game {
 int px(double x); //converte a porcentagem pro espaço da tela em pixels
 int py(double y);
 
+float dx(double x); //tb, mas retorna um float
+float dy(double y);
+
 double ix(int x); //converte de pixels pra uma porcentagem de acordo com o espaço da tela
 double iy(int y);
 

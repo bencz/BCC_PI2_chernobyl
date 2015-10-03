@@ -9,9 +9,8 @@ CharType getCharType(char c) {
 	if (c >= '0' && c <= '9') return CHAR_NUMBER;
 	if (c >= 'A' && c <= 'Z') return CHAR_ALPHA;
 	if (c >= 'a' && c <= 'z') return CHAR_ALPHA;
-	if (c == '.' || c == ',' || c == '/' ||
-		c == '*' || c == '(' || c == ')' ||
-		c == '+' || c == '-' || c == '^') return CHAR_TOKEN;
+	if (c == '.' || c == ',' || c == '/' || c == '*' || c == '(' ||
+		c == ')' || c == '+' || c == '-' || c == '^' || c == '=') return CHAR_TOKEN;
 	if (c == ' ') return CHAR_SPACE;
 	return CHAR_INVALID;
 }
@@ -33,6 +32,8 @@ void inputStart() {
 	input.right = initKey();
 	input.enter = initKey();
 	input.backspace = initKey();
+	input.tab = initKey();
+	
 	input.text[0] = '\0';
 	input.captureText = false;
 	input.captureFinish = false;
@@ -49,6 +50,8 @@ void inputUpdate() {
 	resetKey(input.right);
 	resetKey(input.enter);
 	resetKey(input.backspace);
+	resetKey(input.tab);
+	
 	input.captureFinish = false;
 	input.textUpdate = false;
 	input.caretBlink += game.delta*1.5;
@@ -60,15 +63,22 @@ void inputUpdate() {
 void inputKeyPress(ALLEGRO_EVENT ev) {
 	if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
 		exitGame();
-	} else if (input.captureText) {
+		return;
+	}
+	key* k;
+	if (input.captureText) {
 		if (ev.type == ALLEGRO_EVENT_KEY_DOWN && ev.keyboard.keycode == ALLEGRO_KEY_ENTER) {
 			input.captureText = false;
 			input.captureFinish = true;
 			input.enter->press = true;
 			input.enter->hold = true;
+			return;
+		}
+		switch (ev.keyboard.keycode) {
+			case ALLEGRO_KEY_TAB: k = input.tab; break;
+			default: return;
 		}
 	} else {
-		key* k;
 		switch (ev.keyboard.keycode) {
 			case ALLEGRO_KEY_UP: k = input.up; break;
 			case ALLEGRO_KEY_DOWN: k = input.down; break;
@@ -76,19 +86,18 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 			case ALLEGRO_KEY_RIGHT: k = input.right; break;
 			case ALLEGRO_KEY_ENTER: k = input.enter; break;
 			case ALLEGRO_KEY_BACKSPACE: k = input.backspace; break;
-			default: k = NULL; break;
+			case ALLEGRO_KEY_TAB: k = input.tab; break;
+			default: return;
 		}
-		if (k != NULL) {
-			if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
-				k->press = true;
-				k->hold = true;
-			} else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
-				k->repeat = true;
-			} else {
-				k->release = true;
-				k->hold = false;
-			}
-		}
+	}
+	if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
+		k->press = true;
+		k->hold = true;
+	} else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+		k->repeat = true;
+	} else {
+		k->release = true;
+		k->hold = false;
 	}
 }
 
@@ -228,6 +237,7 @@ void inputKeyChar(ALLEGRO_EVENT ev) {
 				input.selectionStart = -1;
 			}
 			if (c == ',') c = '.';
+			if (c == '=') c = '+';
 			for (int a = len; a > input.caretPos; a--) {
 				input.text[a] = input.text[a-1];
 			}

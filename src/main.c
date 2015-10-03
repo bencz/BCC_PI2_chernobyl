@@ -208,13 +208,15 @@ int main(int argc,char **args) {
 	}
 	al_set_new_display_flags(ALLEGRO_WINDOWED);
 	al_set_new_display_flags(ALLEGRO_RESIZABLE);
+	al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS,1,ALLEGRO_SUGGEST);
+	al_set_new_display_option(ALLEGRO_SAMPLES,4,ALLEGRO_SUGGEST);
 	calculateWindowSize();
 	
 	//timer
 	game.fps = 60;
 	game.delta = 1.0/game.fps;
 	
-	//inicia tudo q o alegro precisa pra iniciar
+	//inicia tudo q o allegro precisa pra iniciar
 	if (!al_init()) {
 		fprintf(stderr,"erro: o allegro não pôde ser inicializado\n");
 		return -1;
@@ -240,7 +242,6 @@ int main(int argc,char **args) {
 		fprintf(stderr,"erro: o addon ttf não pôde ser inicializado\n");
 		return -1;
 	}
-	
 	game.timer = al_create_timer(game.delta);
 	if (!game.timer) {
 		fprintf(stderr,"erro: o timer não pôde ser criado\n");

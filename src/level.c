@@ -12,7 +12,7 @@
 #include "game.h"
 #include "ParserExpressao.h"
 
-#define CACHE_MAX 1024
+#define CACHE_MAX 2048
 
 const int mapWidth = 32;
 const int mapHeight = 18;
@@ -42,33 +42,44 @@ int tilemap[] = {
 int baseX,baseY; //posição da base atual do a.i.-sama
 
 double functionCache[CACHE_MAX]; //cache
+double functionCachePrev[CACHE_MAX]; //cache anterior, para usar na animação
 int cacheCount; //tamanho do cache
+int functionDir; //direção da função, 1 se x cresce, -1 se x decresce
 double functionStart,functionEnd; //pontos onde a função é calculada no cache
 double functionGap; //precisão do cálculo da função
+bool functionPlot; //diz se a função será plotada ou não
 
+float plotTempo; //tempo da animação do gráfico de um cache para o outro
+float dottedTempo; //tempo da animação do tracejado do gráfico
+float weightTempo; //tempo da animação da grossura do gráfico
 double zeroHeight; //valor de f(0), usado para deslocar o plano cartesiano
 double zeroHeightPrev; //valor anterior de zeroHeight
-float zeroHeightTempo; //tempo da animação
+float zeroHeightTempo; //tempo da animação da altura
 
-int textboxPos;
+int textboxPos; //posição da caixa de texto (0 = cima, 1 = baixo)
 bool errorMsgShow; //mostrar uma mensagem de erro ou não
 int errorMsg; //índice da mensgem de erro
 
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
 
-//função para calcular os pontos
-
-void calculatePoints() {
+void calculatePoints(bool reset) {
 	setaValorDaVariavel("x",0);
 	double testNum = calcula(input.text);
 	if (TemErro() && PegaCodigoErro() != ok) {
-		if (PegaCodigoErro() == expressao_vazia) {
-			errorMsgShow = false;
-		} else {
-			errorMsgShow = true;
-			errorMsg = PegaCodigoErro();
-		}
+		functionPlot = false;
+		errorMsg = PegaCodigoErro();
+		errorMsgShow = errorMsg != expressao_vazia;
 	} else {
+		if (!reset && weightTempo > 0) {
+			plotTempo = easeIn(plotTempo);
+			for (int a = 0; a < cacheCount; a++) {
+				functionCachePrev[a] = dlerp(functionCache[a],functionCachePrev[a],plotTempo);
+			}
+			plotTempo = 1;
+		} else {
+			plotTempo = 0;
+		}
+		functionPlot = true;
 		errorMsgShow = false;
 		zeroHeightPrev = lerp(zeroHeight,zeroHeightPrev,zeroHeightTempo*zeroHeightTempo);
 		zeroHeight = testNum;
@@ -81,15 +92,64 @@ void calculatePoints() {
 	}
 }
 
+double getValueOnCache(double x) {
+	double ind = (x-functionStart)/functionGap;
+	int l = floor(ind);
+	if (l >= cacheCount-1) {
+		return functionCache[cacheCount-1];
+	}
+	int h = ceil(ind);
+	if (h <= 0) {
+		return functionCache[0];
+	}
+	return dlerp(functionCache[l],functionCache[h],fmod(ind,1));
+}
+
+double getValueOnCacheLerp(double x,float t) {
+	if (t <= 0) {
+		return getValueOnCache(x);
+	}
+	double ind = (x-functionStart)/functionGap;
+	int l = floor(ind);
+	if (l >= cacheCount-1) {
+		return dlerp(functionCache[cacheCount-1],functionCachePrev[cacheCount-1],t);
+	}
+	int h = ceil(ind);
+	if (h <= 0) {
+		return dlerp(functionCache[0],functionCachePrev[0],t);
+	}
+	ind = fmod(ind,1);
+	return dlerp(
+		dlerp(functionCache[l],functionCache[h],ind),
+		dlerp(functionCachePrev[l],functionCachePrev[h],ind),
+		t
+	);
+}
+
+void setDir(int d) {
+	if (d > 0) {
+		functionDir = 1;
+		if (baseX < -1) {
+			functionStart = -baseX-1;
+		} else {
+			functionStart = 0;
+		}
+		functionEnd = mapWidth;
+	} else {
+		functionDir = -1;
+		if (baseX > mapWidth) {
+			functionEnd = mapWidth;
+		} else {
+			functionEnd = 0;
+		}
+		functionStart = -baseX-1;
+	}
+}
+
 void setBase(int x,int y) {
 	baseX = x;
 	baseY = y;
-	if (x < 0) {
-		functionStart = -x;
-	} else {
-		functionStart = 0;
-	}
-	functionEnd = mapWidth-x;
+	setDir(functionDir);
 }
 
 void showTextbox() {
@@ -109,6 +169,10 @@ void hideTextbox() {
 	input.captureText = false;
 }
 
+//
+//
+//
+
 bool level_load();
 void level_unload();
 void level_update();
@@ -123,9 +187,13 @@ bool level_start() {
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
 	
-	functionGap = 1.0/8.0; //menor o valor, maior a precisão
+	functionDir = 1;
+	functionGap = 1.0/64.0; //menor o valor, maior a precisão
+	functionPlot = false;
 	
 	cacheCount = 0;
+	plotTempo = 0;
+	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
 	
@@ -162,24 +230,51 @@ void level_update() {
 			hideTextbox();
 		}
 		if (input.textUpdate) {
-			calculatePoints();
+			calculatePoints(false);
 		}
-		if (zeroHeightTempo > 0) {
-			zeroHeightTempo -= game.delta*3;
-			if (zeroHeightTempo < 0) {
-				zeroHeightTempo = 0;
-			}
+		if (input.tab->press) {
+			setDir(-functionDir);
+			calculatePoints(true);
+		}
+	}
+	if (zeroHeightTempo > 0) {
+		zeroHeightTempo -= game.delta*3;
+		if (zeroHeightTempo < 0) {
+			zeroHeightTempo = 0;
+		}
+	}
+	dottedTempo += game.delta*3;
+	while (dottedTempo >= 1) {
+		dottedTempo -= 1;
+	}
+	if (functionPlot) {
+		if (weightTempo < 1) {
+			weightTempo += game.delta*8;
+			if (weightTempo > 1) weightTempo = 1;
+		}
+	} else {
+		if (weightTempo > 0) {
+			weightTempo -= game.delta*2;
+			if (weightTempo < 0) weightTempo = 0;
+		}
+	}
+	if (plotTempo > 0) {
+		if (weightTempo > 0) {
+			plotTempo -= game.delta*8;
+			if (plotTempo < 0) plotTempo = 0;
+		} else {
+			plotTempo = 0;
 		}
 	}
 }
 
 void level_draw() {
 	al_clear_to_color(al_map_rgb(255,255,255));
-	int weight;
+	float weight;
 	if (game.height <= 180) {
 		weight = 1;
 	} else {
-		weight = (int)round(game.height/180.0);
+		weight = round(game.height/180.0);
 	}
 	
 	//inversa do tamanho do mapa, pra usar como porcentagem
@@ -202,26 +297,34 @@ void level_draw() {
 	
 	//posição do ponto 0 do gráfico
 	double offsetX = scaleX*(baseX+1);
-	double offsetY = scaleY*(baseY+1+lerp(zeroHeight,zeroHeightPrev,zeroHeightTempo*zeroHeightTempo));
+	double offsetY = scaleY*(baseY+1+lerp(zeroHeight,zeroHeightPrev,easeIn(zeroHeightTempo)));
 	
 	//desenha os eixos
 	BLENDALPHA();
 	ALLEGRO_COLOR axisColor = al_map_rgba(255,255,255,51);
 	al_draw_line(px(offsetX),py(0),px(offsetX),py(1),axisColor,weight);
-	al_draw_line(px(0),py(offsetY),px(1),py(offsetY),axisColor,weight);
 	double gridPos;
 	int gridOffset;
-	gridOffset = floor(-offsetX/scaleX);
-	while (1) {
-		if (gridOffset == 0) {
+	if (functionDir > 0) {
+		al_draw_line(px(offsetX),py(offsetY),px(1),py(offsetY),axisColor,weight);
+		gridOffset = 1;
+		while (1) {
+			gridPos = gridOffset*scaleX+offsetX;
+			if (gridPos > 1) break;
+			gridPos = px(gridPos);
+			al_draw_line(gridPos,py(offsetY-scaleY*.125),gridPos,py(offsetY+scaleY*.125),axisColor,weight);
 			gridOffset++;
-			continue;
 		}
-		gridPos = gridOffset*scaleX+offsetX;
-		if (gridPos > 1) break;
-		gridPos = px(gridPos);
-		al_draw_line(gridPos,py(offsetY-scaleY*.125),gridPos,py(offsetY+scaleY*.125),axisColor,weight);
-		gridOffset++;
+	} else {
+		al_draw_line(px(0),py(offsetY),px(offsetX),py(offsetY),axisColor,weight);
+		gridOffset = floor(-offsetX/scaleX);
+		while (1) {
+			gridPos = gridOffset*scaleX+offsetX;
+			if (gridOffset >= 0 || gridPos > 1) break;
+			gridPos = px(gridPos);
+			al_draw_line(gridPos,py(offsetY-scaleY*.125),gridPos,py(offsetY+scaleY*.125),axisColor,weight);
+			gridOffset++;
+		}
 	}
 	gridOffset = floor(-offsetY/scaleY);
 	while (1) {
@@ -238,14 +341,33 @@ void level_draw() {
 	BLENDDEFAULT();
 	
 	//plota a função
-	double xSizeN = scaleX*functionGap;
-	double xOffsetN = offsetX+functionStart*scaleX;
-	for (int a = 0; a < cacheCount-1; a++) {
-		al_draw_line(
-			px(xSizeN*a+xOffsetN),py(-scaleY*functionCache[a]+offsetY),
-			px(xSizeN*(a+1)+xOffsetN),py(-scaleY*functionCache[a+1]+offsetY),
-			al_map_rgb(255,255,255),weight
-		);
+	if (weightTempo > 0 && cacheCount > 0) {
+		float t = easeIn(plotTempo);
+		float w = easeOut(weightTempo);
+		ALLEGRO_COLOR plotColor = al_map_rgba(255,255,255,w*255);
+		w = ceil(w*weight);
+		double x,xa;
+		BLENDALPHA();
+		if (functionDir > 0) {
+			for (x = dottedTempo*.25-.125; x < functionEnd; x += .25) {
+				xa = (x < 0)?0:x;
+				al_draw_line(
+					dx(offsetX+xa*scaleX),dy(offsetY-getValueOnCacheLerp(xa,t)*scaleY),
+					dx(offsetX+(x+.125)*scaleX),dy(offsetY-getValueOnCacheLerp(x+.125,t)*scaleY),
+					plotColor,w
+				);
+			}
+		} else {
+			for (x = -dottedTempo*.25+.125; x > functionStart; x -= .25) {
+				xa = (x > 0)?0:x;
+				al_draw_line(
+					dx(offsetX+xa*scaleX),dy(offsetY-getValueOnCacheLerp(xa,t)*scaleY),
+					dx(offsetX+(x-.125)*scaleX),dy(offsetY-getValueOnCacheLerp(x-.125,t)*scaleY),
+					plotColor,w
+				);
+			}
+		}
+		BLENDDEFAULT();
 	}
 	
 	//textbox
@@ -303,9 +425,9 @@ void level_draw() {
 	}
 	if (input.captureText) {
 		al_draw_text(data.font_UbuntuB,al_map_rgb(51,51,51),px(.01),textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
-		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"enter: fechar textbox");
+		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"tab: inverter - enter: fechar");
 	} else {
 		al_draw_text(data.font_UbuntuB,al_map_rgb(102,102,102),px(.01),textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
-		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"enter: abrir textbox - backspace: voltar");
+		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"backspace: voltar - tab: inverter - enter: abrir");
 	}
 }

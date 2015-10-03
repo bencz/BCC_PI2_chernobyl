@@ -1,5 +1,7 @@
 #include <stdbool.h>
 
+#include <math.h>
+
 #include "input.h"
 #include "game.h"
 #include "menu.h"
@@ -7,11 +9,19 @@
 #include "level.h"
 
 int px(double x) {
-	return (int)(x*game.width+game.offsetx);
+	return round(x*game.width+game.offsetx);
 }
 
 int py(double y) {
-	return (int)(y*game.height+game.offsety);
+	return round(y*game.height+game.offsety);
+}
+
+float dx(double x) {
+	return (float)(x*game.width+game.offsetx);
+}
+
+float dy(double y) {
+	return (float)(y*game.height+game.offsety);
 }
 
 double ix(int x) {

@@ -22,6 +22,7 @@ struct Input {
 	key *right;
 	key *enter;
 	key *backspace;
+	key *tab;
 	
 	char text[1024];
 	bool captureText;

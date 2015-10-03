@@ -6,6 +6,12 @@ float lerp(float a,float b,float t) {
 	return a+(b-a)*t;
 }
 
+double dlerp(double a,double b,double t) {
+	if (t <= 0) return a;
+	if (t >= 1) return b;
+	return a+(b-a)*t;
+}
+
 float invLerp(float a,float b,float t) {
 	if (b > a) {
 		if (t <= a) return 0;

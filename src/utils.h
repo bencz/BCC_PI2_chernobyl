@@ -3,6 +3,8 @@
 
 float lerp(float a,float b,float t);
 
+double dlerp(double a,double b,double t);
+
 float invLerp(float a,float b,float t);
 
 float ease(float t);
