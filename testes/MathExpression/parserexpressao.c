@@ -50,12 +50,6 @@ static void level6(double *r);
 // Prototipos para as funções "custom" do programa 
 double deg(double x);
 double rad(double x);
-double sind(double x);
-double tand(double x);
-double cosd(double x);
-double asind(double x);
-double acosd(double x);
-double atand(double x);
 
 #define PI    3.14159265358979323846
 #define M_E   2.71828182845904523536
@@ -80,21 +74,12 @@ VARIAVEL constantes[] =
 
 FUNCAO funcoes[] =
 {
-	{ "sin",     1,    sind },
-	{ "cos",     1,    cosd },
-	{ "tan",     1,    tand },
-	{ "asin",    1,    asind },
-	{ "acos",    1,    acosd },
-	{ "atan",    1,    atand },
-	{ "sinr",    1,    sin },
-	{ "cosr",    1,    cos },
-	{ "tanr",    1,    tan },
-	{ "asinr",   1,    asin },
-	{ "acosr",   1,    acos },
-	{ "atanr",   1,    atan },
-	{ "sinh",    1,    sinh },
-	{ "cosh",    1,    cosh },
-	{ "tanh",    1,    tanh },
+	{ "sin",     1,    sin },
+	{ "cos",     1,    cos },
+	{ "tan",     1,    tan },
+	{ "asin",    1,    asin },
+	{ "acos",    1,    acos },
+	{ "atan",    1,    atan },
 	{ "exp",     1,    exp },
 	{ "ln",      1,    log },
 	{ "log",     1,    log10 },
@@ -124,36 +109,6 @@ double deg(double x)
 double rad(double x)
 {
 	return (x*RPD);
-}
-
-double sind(double x)
-{
-	return sin(x*RPD);
-}
-
-double cosd(double x)
-{
-	return cos(x*RPD);
-}
-
-double tand(double x)
-{
-	return tan(x*RPD);
-}
-
-double asind(double x)
-{
-	return DPR*asin(x);
-}
-
-double acosd(double x)
-{
-	return DPR*acos(x);
-}
-
-double atand(double x)
-{
-	return DPR*atan(x);
 }
 
 int pegasimbolo(char *s, double *v)
@@ -389,6 +344,7 @@ static void level6(double *r)
 {
 	int  i, n;
 	double a[3];
+	int tamanhoTabelaFuncoes = sizeof(funcoes)/sizeof(FUNCAO);
 
 	if (*token == '(')
 	{
@@ -411,7 +367,11 @@ static void level6(double *r)
 		{
 			if (*expressao == '(')
 			{
-				for (i = 0; *funcoes[i].nome; i++)
+				for (i = 0; i<tamanhoTabelaFuncoes; i++)
+				{
+					if(funcoes[i].nome == NULL)
+						break;
+				
 					if (!strcmp(token, funcoes[i].nome))
 					{
 						parse();
@@ -434,7 +394,8 @@ static void level6(double *r)
 						*r = funcoes[i].func(a[0], a[1], a[2]);
 						return;
 					}
-				if (!*funcoes[i].nome)
+				}
+				if (funcoes[i].nome == NULL)
 					ERR(E_FUNCNLO);
 			}
 			else if (!pegavariavel(token, r))
