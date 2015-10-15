@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="25" height="18" tilewidth="32" tileheight="32">
+ <tileset firstgid="1" name="pixelart" tilewidth="32" tileheight="32">
+  <image source="../Documentos/tilesteste/pixelart.png" width="600" height="800"/>
+  <tile id="0">
+   <properties>
+    <property name="Collidable" value="True"/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="Collidable" value="True"/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="451" name="pixelart" tilewidth="32" tileheight="32">
+  <image source="../Documentos/tilesteste/pixelart.jpg" width="600" height="800"/>
+ </tileset>
+ <tileset firstgid="901" name="collisionteste" tilewidth="32" tileheight="32">
+  <image source="../Documentos/tilesteste/collisionteste.png" width="32" height="32"/>
+ </tileset>
+ <tileset firstgid="902" name="collisionteste" tilewidth="32" tileheight="32">
+  <image source="../Documentos/tilesteste/collisionteste.png" trans="ff00ff" width="32" height="32"/>
+ </tileset>
+ <layer name="Camada de Tiles 1" width="25" height="18">
+  <properties>
+   <property name="teste" value="true"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJzVlMsNgCAQRKH/slBLQEvAEkAOQuJhQ4afLIlOMuG0PNhZ0FKIZaL3YB/MpQvs5T/AsJ38yEhrKEODXq6dDAPqKKOlZ5ssr0i9jEOW1xYG7aV65m5UlOFAHmcjI83ZDuSBpCqzwsGoqZTHDIYD96yp5Uxv/xKUQe583P8V0t8YuWzi/ibTWy7Hd3wDEsB3/A==
+  </data>
+ </layer>
+ <objectgroup name="Camada de Objetos 1" width="25" height="18"/>
+ <layer name="collision" width="25" height="18" visible="0">
+  <properties>
+   <property name="iscollided" value="true"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJxrZWZgaKUDphbAZtZwtIMa4YhNH7odtAADbQe14ora8UGMHZSYgcttAx0ftLKD2nkS3Q5y9BGTRmjh7uFuB60xAMs3QeE=
+  </data>
+ </layer>
+</map>
