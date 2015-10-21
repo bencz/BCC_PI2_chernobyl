@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "input.h"
 #include "game.h"
-#include "ParserExpressao.h"
+#include "parserexpressao.h"
 
 #define CACHE_MAX 2048
 
@@ -60,15 +60,23 @@ int textboxPos; //posição da caixa de texto (0 = cima, 1 = baixo)
 bool errorMsgShow; //mostrar uma mensagem de erro ou não
 int errorMsg; //índice da mensgem de erro
 
+float playerX; //posição do cara no x
+float playerY; //idem só q pro y
+
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
 
 void calculatePoints(bool reset) {
-	setaValorDaVariavel("x",0);
-	double testNum = calcula(input.text);
-	if (TemErro() && PegaCodigoErro() != ok) {
+	double p = 0;
+	double resultado = 0;
+	int flag = 0, errorCode = 10;
+
+	setavariavel("x", &p);
+	errorCode = calcula(input.text, &resultado, &flag);
+
+	if (errorCode != E_OK) {
 		functionPlot = false;
-		errorMsg = PegaCodigoErro();
-		errorMsgShow = errorMsg != expressao_vazia;
+		errorMsg = errorCode - 1;
+		errorMsgShow = errorMsg != E_VAZIA;
 	} else {
 		if (!reset && weightTempo > 0) {
 			plotTempo = easeIn(plotTempo);
@@ -82,12 +90,13 @@ void calculatePoints(bool reset) {
 		functionPlot = true;
 		errorMsgShow = false;
 		zeroHeightPrev = lerp(zeroHeight,zeroHeightPrev,zeroHeightTempo*zeroHeightTempo);
-		zeroHeight = testNum;
+		zeroHeight = resultado;
 		zeroHeightTempo = 1;
 		cacheCount = 0;
-		for (double p = functionStart; cacheCount < CACHE_MAX && p <= functionEnd; cacheCount++,p += functionGap) {
-			setaValorDaVariavel("x",p);
-			functionCache[cacheCount] = calcula(input.text);
+		for (p = functionStart; cacheCount < CACHE_MAX && p <= functionEnd; cacheCount++,p += functionGap) {
+			setavariavel("x", &p);
+			errorCode = calcula(input.text, &resultado, &flag);
+			functionCache[cacheCount] = resultado;
 		}
 	}
 }
@@ -186,19 +195,19 @@ bool level_start() {
 	scene.update = &level_update;
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
-	
+
 	functionDir = 1;
 	functionGap = 1.0/64.0; //menor o valor, maior a precisão
 	functionPlot = false;
-	
+
 	cacheCount = 0;
 	plotTempo = 0;
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-	
+
 	setBase(3,8); //temp
-	
+
 	textboxPos = 1;
 	showTextbox();
 	input.text[0] = '\0';
@@ -276,11 +285,11 @@ void level_draw() {
 	} else {
 		weight = round(game.height/180.0);
 	}
-	
+
 	//inversa do tamanho do mapa, pra usar como porcentagem
 	double scaleX = 1.0/mapWidth;
 	double scaleY = 1.0/mapHeight;
-	
+
 	int t;
 	for (int y = 0; y < mapHeight; y++) {
 		for (int x = 0; x < mapWidth; x++) {
@@ -294,11 +303,11 @@ void level_draw() {
 			}
 		}
 	}
-	
+
 	//posição do ponto 0 do gráfico
 	double offsetX = scaleX*(baseX+1);
 	double offsetY = scaleY*(baseY+1+lerp(zeroHeight,zeroHeightPrev,easeIn(zeroHeightTempo)));
-	
+
 	//desenha os eixos
 	BLENDALPHA();
 	ALLEGRO_COLOR axisColor = al_map_rgba(255,255,255,51);
@@ -339,7 +348,7 @@ void level_draw() {
 		gridOffset++;
 	}
 	BLENDDEFAULT();
-	
+
 	//plota a função
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
@@ -369,7 +378,7 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-	
+
 	//textbox
 	float textboxHeight = textboxPos?.8:0;
 	BLENDALPHA();
@@ -421,7 +430,7 @@ void level_draw() {
 			al_map_rgb(255,204,15)
 		);
 		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.0275),py(.127+textboxHeight),ALLEGRO_ALIGN_CENTRE,"!");
-		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.05),py(.125+textboxHeight),ALLEGRO_ALIGN_LEFT,MensagemDoErro[errorMsg]);
+		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.05),py(.125+textboxHeight),ALLEGRO_ALIGN_LEFT,mensagensDeErro[errorMsg]);
 	}
 	if (input.captureText) {
 		al_draw_text(data.font_UbuntuB,al_map_rgb(51,51,51),px(.01),textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
