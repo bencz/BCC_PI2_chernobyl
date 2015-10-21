@@ -12,7 +12,7 @@
 #include "game.h"
 #include "parserexpressao.h"
 
-#define CACHE_MAX 2048
+#define CACHE_MAX 2200
 
 const int mapWidth = 32;
 const int mapHeight = 18;
@@ -24,8 +24,8 @@ int tilemap[] = {
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, //9
 	1, 0, 0, 2, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -60,11 +60,23 @@ int textboxPos; //posição da caixa de texto (0 = cima, 1 = baixo)
 bool errorMsgShow; //mostrar uma mensagem de erro ou não
 int errorMsg; //índice da mensagem de erro
 
-double playerX; //posição do cara no x
-double playerY; //idem só q pro y
-bool isMoving; //tá movingando
+double playerX,playerY; //posição do jogador
+double playerSpriteX,playerSpriteY; //posição do jogador
+bool moving; //tá movendo
+bool dead; //tá morrendo
+float respawnTempo; //tempo de respawn, pra animação dele piscando
+float baseTempo; //tempo pra animação do lerp do player indo pra base
 
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
+
+int getTile(int x,int y) {
+	return tilemap[x+y*mapWidth];
+}
+
+int getTileSafe(int x,int y) {
+	if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) return -1;
+	return tilemap[x+y*mapWidth];
+}
 
 void calculatePoints(bool reset) {
 	double p = 0;
@@ -142,19 +154,28 @@ void setDir(int d) {
 		} else {
 			functionStart = 0;
 		}
-		functionEnd = mapWidth;
+		functionEnd = mapWidth+1;
 	} else {
 		functionDir = -1;
 		if (baseX > mapWidth) {
-			functionEnd = mapWidth;
+			functionEnd = mapWidth+1;
 		} else {
 			functionEnd = 0;
 		}
-		functionStart = -baseX-1;
+		functionStart = -baseX-2;
 	}
 }
 
 void setBase(int x,int y) {
+	if (getTileSafe(x-1,y-1) == 2) {
+		setBase(x-1,y-1); return;
+	}
+	if (getTileSafe(x-1,y) == 2) {
+		setBase(x-1,y); return;
+	}
+	if (getTileSafe(x,y-1) == 2) {
+		setBase(x,y-1); return;
+	}
 	baseX = x;
 	baseY = y;
 	playerX = x;
@@ -162,7 +183,23 @@ void setBase(int x,int y) {
 	setDir(functionDir);
 }
 
-void showTextbox() {
+bool setBaseCheck(int x,int y) {
+	if (getTileSafe(x-1,y-1) == 2) return setBaseCheck(x-1,y-1);
+	if (getTileSafe(x-1,y) == 2) return setBaseCheck(x-1,y);
+	if (getTileSafe(x,y-1) == 2) return setBaseCheck(x,y-1);
+	if (baseX == x && baseY == y) return false;
+	baseX = x;
+	baseY = y;
+	playerX = x;
+	playerY = y;
+	setDir(functionDir);
+	return true;
+}
+
+void stopMoving() {
+	respawnTempo = 1;
+	moving = false;
+	dead = false;
 	input.captureText = true;
 	if (textboxPos) {
 		if (baseY >= mapHeight-5) {
@@ -175,11 +212,16 @@ void showTextbox() {
 	}
 }
 
-void hideTextbox() {
+void startMoving() {
+	moving = true;
 	input.captureText = false;
+	respawnTempo = 0;
 }
 
-bool collide() {
+int collide(int *x,int *y) {
+	//tudo meio temporário
+	//precisa colocar uma colisão q detecte toda uma altura etc
+	//tb precisa retornar um x e y da base que colidiu!
 	int LEFT = floor(playerX+.5);
 	int RIGHT = ceil(playerX+.5);
 	int TOP = floor(playerY+.5);
@@ -189,9 +231,21 @@ bool collide() {
 	int botleft = LEFT+BOT*mapWidth;
 	int botright = RIGHT+BOT*mapWidth;
 	if (tilemap[topleft] == 1 || tilemap[topright] == 1 || tilemap[botleft] == 1 || tilemap[botright] == 1) {
-		return true;
+		return 1;
 	}
-	return false;
+	if (tilemap[topleft] == 2 || tilemap[topright] == 2 || tilemap[botleft] == 2 || tilemap[botright] == 2) {
+		if (tilemap[topleft] == 2) {
+			*x = LEFT; *y = TOP;
+		} else if (tilemap[topright] == 2) {
+			*x = RIGHT; *y = TOP;
+		} else if (tilemap[botleft] == 2) {
+			*x = LEFT; *y = BOT;
+		} else if (tilemap[botright] == 2) {
+			*x = RIGHT; *y = BOT;
+		}
+		return 2;
+	}
+	return 0;
 }
 
 //
@@ -221,12 +275,16 @@ bool level_start() {
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-	isMoving = false;
 	
 	setBase(3,8); //temp
 	
+	moving = false;
+	dead = false;
+	respawnTempo = 1;
+	baseTempo = 0;
+	
 	textboxPos = 1;
-	showTextbox();
+	stopMoving();
 	input.text[0] = '\0';
 	input.captureFinish = false;
 	input.caretPos = 0;
@@ -250,23 +308,18 @@ void level_update() {
 			sceneLoad(MENU);
 		}
 		if (input.enter->press && !input.captureText && !input.captureFinish) {
-			showTextbox();
+			stopMoving();
+			baseTempo = 0;
 			playerX = baseX;
 			playerY = baseY;
-			isMoving = false;
 		}
-		if (input.captureFinish) {
-			hideTextbox();
-			if (functionPlot) {
-				isMoving = true;
-			} else {
-				showTextbox();
-			}
+		if (input.captureFinish && functionPlot) {
+			startMoving();
 		}
 		if (input.textUpdate) {
 			calculatePoints(false);
 		}
-		if (!isMoving && input.tab->press) {
+		if (!moving && input.tab->press) {
 			setDir(-functionDir);
 			calculatePoints(true);
 		}
@@ -300,9 +353,52 @@ void level_update() {
 			plotTempo = 0;
 		}
 	}
-	if (isMoving) {
-		playerX += game.delta*2*functionDir;
+	if (respawnTempo > 0) {
+		respawnTempo -= game.delta;
+		if (respawnTempo < 0) respawnTempo = 0;
+	}
+	if (moving) {
+		if (baseTempo < 1) {
+			baseTempo += game.delta*4;
+			if (baseTempo > 1) baseTempo = 1;
+		}
+	} else {
+		if (baseTempo > 0) {
+			baseTempo -= game.delta*1.5;
+			if (baseTempo < 0) baseTempo = 0;
+		}
+	}
+	if (moving && !dead) {
+		playerX += game.delta*2.5*baseTempo*functionDir;
 		playerY = zeroHeight-getValueOnCache(playerX-baseX)+baseY;
+		playerSpriteX = lerp(playerSpriteX,playerX,baseTempo);
+		playerSpriteY = lerp(playerSpriteY,playerY,baseTempo);
+		int x,y;
+		int collision = collide(&x,&y);
+		if (collision == 1) {
+			dead = true;
+			respawnTempo = 2.5;
+		} else if (collision == 2) {
+			if (setBaseCheck(x,y)) {
+				stopMoving();
+				calculatePoints(true);
+				baseTempo = 1;
+				respawnTempo = 0;
+			}
+		}
+	}
+	if (dead) {
+		if (respawnTempo <= 1) {
+			stopMoving();
+			playerX = playerSpriteX = baseX;
+			playerY = playerSpriteY = baseY;
+		} else {
+			playerSpriteY += game.delta*7*(2.2-respawnTempo);
+		}
+	}
+	if (!moving && !dead) {
+		playerSpriteX = lerp(playerX,playerSpriteX,baseTempo);
+		playerSpriteY = lerp(playerY,playerSpriteY,baseTempo);
 	}
 }
 
@@ -319,13 +415,12 @@ void level_draw() {
 	double scaleX = 1.0/mapWidth;
 	double scaleY = 1.0/mapHeight;
 	
-	int t;
-	for (int y = 0; y < mapHeight; y++) {
+	//desenha o tilemap
+	al_draw_filled_rectangle(px(0),py(0),px(1),py(1),al_map_rgb(51,51,51));
+	for (int t,y = 0; y < mapHeight; y++) {
 		for (int x = 0; x < mapWidth; x++) {
-			t = tilemap[y*mapWidth+x];
-			if (t == 0) {
-				al_draw_filled_rectangle(px(x*scaleX),py(y*scaleY),px((x+1)*scaleX),py((y+1)*scaleY),al_map_rgb(51,51,51));
-			} else if (t == 1) {
+			t = getTile(x,y);
+			if (t == 1) {
 				al_draw_filled_rectangle(px(x*scaleX),py(y*scaleY),px((x+1)*scaleX),py((y+1)*scaleY),al_map_rgb(204,51,51));
 			} else if (t == 2) {
 				al_draw_filled_rectangle(px(x*scaleX),py(y*scaleY),px((x+1)*scaleX),py((y+1)*scaleY),al_map_rgb(51,204,51));
@@ -378,11 +473,21 @@ void level_draw() {
 	}
 	BLENDDEFAULT();
 	
+	//desenha o guri
+	bool blink = respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)%2;
+	if (!blink) {
+		al_draw_rectangle(
+			px((playerSpriteX+0.5)*scaleX),py((playerSpriteY+0.5)*scaleY),
+			px((playerSpriteX+1.5)*scaleX),py((playerSpriteY+1.5)*scaleY),
+			dead?al_map_rgb(255,51,0):al_map_rgb(255,192,0),weight*1.5
+		);
+	}
+	
 	//plota a função
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
 		float w = easeOut(weightTempo);
-		ALLEGRO_COLOR plotColor = al_map_rgba(255,255,255,w*255);
+		ALLEGRO_COLOR plotColor = al_map_rgba(255,255,255,moving?(w*128):(w*255));
 		w = ceil(w*weight);
 		double x,xa;
 		BLENDALPHA();
@@ -407,13 +512,6 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-	
-	//desenha o guri
-	al_draw_rectangle(
-		px((playerX+.5)*scaleX),py((playerY+.5)*scaleY),
-		px((playerX+1.5)*scaleX),py((playerY+1.5)*scaleY),
-		collide()?al_map_rgb(255,0,0):al_map_rgb(255,192,0),weight
-	);
 	
 	//textbox
 	float textboxHeight = textboxPos?.8:0;
@@ -470,9 +568,9 @@ void level_draw() {
 	}
 	if (input.captureText) {
 		al_draw_text(data.font_UbuntuB,al_map_rgb(51,51,51),px(.01),textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
-		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"tab: inverter - enter: fechar");
+		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"tab: inverter - enter: iniciar");
 	} else {
 		al_draw_text(data.font_UbuntuB,al_map_rgb(102,102,102),px(.01),textboxOffsetY,ALLEGRO_ALIGN_LEFT,">");
-		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"backspace: voltar - tab: inverter - enter: abrir");
+		al_draw_text(data.font_UbuntuR,al_map_rgb(51,51,51),px(.99),py(.125+textboxHeight),ALLEGRO_ALIGN_RIGHT,"backspace: voltar - enter: parar");
 	}
 }
