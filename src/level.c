@@ -58,24 +58,23 @@ float zeroHeightTempo; //tempo da animação da altura
 
 int textboxPos; //posição da caixa de texto (0 = cima, 1 = baixo)
 bool errorMsgShow; //mostrar uma mensagem de erro ou não
-int errorMsg; //índice da mensgem de erro
+int errorMsg; //índice da mensagem de erro
 
-float playerX; //posição do cara no x
-float playerY; //idem só q pro y
+double playerX; //posição do cara no x
+double playerY; //idem só q pro y
+bool isMoving; //tá movingando
 
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
 
 void calculatePoints(bool reset) {
 	double p = 0;
 	double resultado = 0;
-	int flag = 0, errorCode = 10;
-
-	setavariavel("x", &p);
-	errorCode = calcula(input.text, &resultado, &flag);
-
+	int flag = 0,errorCode = 10;
+	setavariavel("x",&p);
+	errorCode = calcula(input.text,&resultado,&flag);
 	if (errorCode != E_OK) {
 		functionPlot = false;
-		errorMsg = errorCode - 1;
+		errorMsg = errorCode-1;
 		errorMsgShow = errorMsg != E_VAZIA;
 	} else {
 		if (!reset && weightTempo > 0) {
@@ -94,8 +93,8 @@ void calculatePoints(bool reset) {
 		zeroHeightTempo = 1;
 		cacheCount = 0;
 		for (p = functionStart; cacheCount < CACHE_MAX && p <= functionEnd; cacheCount++,p += functionGap) {
-			setavariavel("x", &p);
-			errorCode = calcula(input.text, &resultado, &flag);
+			setavariavel("x",&p);
+			errorCode = calcula(input.text,&resultado,&flag);
 			functionCache[cacheCount] = resultado;
 		}
 	}
@@ -158,6 +157,8 @@ void setDir(int d) {
 void setBase(int x,int y) {
 	baseX = x;
 	baseY = y;
+	playerX = x;
+	playerY = y;
 	setDir(functionDir);
 }
 
@@ -178,6 +179,21 @@ void hideTextbox() {
 	input.captureText = false;
 }
 
+bool collide() {
+	int LEFT = floor(playerX+.5);
+	int RIGHT = ceil(playerX+.5);
+	int TOP = floor(playerY+.5);
+	int BOT = ceil(playerY+.5);
+	int topleft = LEFT+TOP*mapWidth;
+	int topright = RIGHT+TOP*mapWidth;
+	int botleft = LEFT+BOT*mapWidth;
+	int botright = RIGHT+BOT*mapWidth;
+	if (tilemap[topleft] == 1 || tilemap[topright] == 1 || tilemap[botleft] == 1 || tilemap[botright] == 1) {
+		return true;
+	}
+	return false;
+}
+
 //
 //
 //
@@ -195,19 +211,20 @@ bool level_start() {
 	scene.update = &level_update;
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
-
+	
 	functionDir = 1;
 	functionGap = 1.0/64.0; //menor o valor, maior a precisão
 	functionPlot = false;
-
+	
 	cacheCount = 0;
 	plotTempo = 0;
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-
+	isMoving = false;
+	
 	setBase(3,8); //temp
-
+	
 	textboxPos = 1;
 	showTextbox();
 	input.text[0] = '\0';
@@ -234,14 +251,22 @@ void level_update() {
 		}
 		if (input.enter->press && !input.captureText && !input.captureFinish) {
 			showTextbox();
+			playerX = baseX;
+			playerY = baseY;
+			isMoving = false;
 		}
 		if (input.captureFinish) {
 			hideTextbox();
+			if (functionPlot) {
+				isMoving = true;
+			} else {
+				showTextbox();
+			}
 		}
 		if (input.textUpdate) {
 			calculatePoints(false);
 		}
-		if (input.tab->press) {
+		if (!isMoving && input.tab->press) {
 			setDir(-functionDir);
 			calculatePoints(true);
 		}
@@ -275,6 +300,10 @@ void level_update() {
 			plotTempo = 0;
 		}
 	}
+	if (isMoving) {
+		playerX += game.delta*2*functionDir;
+		playerY = zeroHeight-getValueOnCache(playerX-baseX)+baseY;
+	}
 }
 
 void level_draw() {
@@ -285,11 +314,11 @@ void level_draw() {
 	} else {
 		weight = round(game.height/180.0);
 	}
-
+	
 	//inversa do tamanho do mapa, pra usar como porcentagem
 	double scaleX = 1.0/mapWidth;
 	double scaleY = 1.0/mapHeight;
-
+	
 	int t;
 	for (int y = 0; y < mapHeight; y++) {
 		for (int x = 0; x < mapWidth; x++) {
@@ -303,11 +332,11 @@ void level_draw() {
 			}
 		}
 	}
-
+	
 	//posição do ponto 0 do gráfico
 	double offsetX = scaleX*(baseX+1);
 	double offsetY = scaleY*(baseY+1+lerp(zeroHeight,zeroHeightPrev,easeIn(zeroHeightTempo)));
-
+	
 	//desenha os eixos
 	BLENDALPHA();
 	ALLEGRO_COLOR axisColor = al_map_rgba(255,255,255,51);
@@ -348,7 +377,7 @@ void level_draw() {
 		gridOffset++;
 	}
 	BLENDDEFAULT();
-
+	
 	//plota a função
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
@@ -378,7 +407,14 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-
+	
+	//desenha o guri
+	al_draw_rectangle(
+		px((playerX+.5)*scaleX),py((playerY+.5)*scaleY),
+		px((playerX+1.5)*scaleX),py((playerY+1.5)*scaleY),
+		collide()?al_map_rgb(255,0,0):al_map_rgb(255,192,0),weight
+	);
+	
 	//textbox
 	float textboxHeight = textboxPos?.8:0;
 	BLENDALPHA();
