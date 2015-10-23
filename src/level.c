@@ -60,7 +60,7 @@ int textboxPos; //posição da caixa de texto (0 = cima, 1 = baixo)
 bool errorMsgShow; //mostrar uma mensagem de erro ou não
 int errorMsg; //índice da mensagem de erro
 
-double playerX,playerY; //posição do jogador
+double playerX,playerY,playerPrevY; //posição do jogador
 double playerSpriteX,playerSpriteY; //posição do jogador
 bool moving; //tá movendo
 bool dead; //tá morrendo
@@ -183,16 +183,11 @@ void setBase(int x,int y) {
 	setDir(functionDir);
 }
 
-bool setBaseCheck(int x,int y) {
-	if (getTileSafe(x-1,y-1) == 2) return setBaseCheck(x-1,y-1);
-	if (getTileSafe(x-1,y) == 2) return setBaseCheck(x-1,y);
-	if (getTileSafe(x,y-1) == 2) return setBaseCheck(x,y-1);
+bool checkBase(int x,int y) {
+	if (getTileSafe(x-1,y-1) == 2) return checkBase(x-1,y-1);
+	if (getTileSafe(x-1,y) == 2) return checkBase(x-1,y);
+	if (getTileSafe(x,y-1) == 2) return checkBase(x,y-1);
 	if (baseX == x && baseY == y) return false;
-	baseX = x;
-	baseY = y;
-	playerX = x;
-	playerY = y;
-	setDir(functionDir);
 	return true;
 }
 
@@ -218,33 +213,103 @@ void startMoving() {
 	respawnTempo = 0;
 }
 
-int collide(int *x,int *y) {
-	//tudo meio temporário
-	//precisa colocar uma colisão q detecte toda uma altura etc
-	//tb precisa retornar um x e y da base que colidiu!
+int collide(double delta, int *x,int *y) {
+
+	//printf("%lf\n", delta);
+
+	int i;
 	int LEFT = floor(playerX+.5);
 	int RIGHT = ceil(playerX+.5);
-	int TOP = floor(playerY+.5);
-	int BOT = ceil(playerY+.5);
-	int topleft = LEFT+TOP*mapWidth;
-	int topright = RIGHT+TOP*mapWidth;
-	int botleft = LEFT+BOT*mapWidth;
-	int botright = RIGHT+BOT*mapWidth;
-	if (tilemap[topleft] == 1 || tilemap[topright] == 1 || tilemap[botleft] == 1 || tilemap[botright] == 1) {
-		return 1;
-	}
-	if (tilemap[topleft] == 2 || tilemap[topright] == 2 || tilemap[botleft] == 2 || tilemap[botright] == 2) {
-		if (tilemap[topleft] == 2) {
-			*x = LEFT; *y = TOP;
-		} else if (tilemap[topright] == 2) {
-			*x = RIGHT; *y = TOP;
-		} else if (tilemap[botleft] == 2) {
-			*x = LEFT; *y = BOT;
-		} else if (tilemap[botright] == 2) {
-			*x = RIGHT; *y = BOT;
+
+	if(delta > 0)
+	{
+		int TOP = floor(playerY+.5-delta);
+		int BOT = ceil(playerY+.5);
+
+		int topleft = LEFT+TOP*mapWidth;
+		int topright = RIGHT+TOP*mapWidth;
+		int botleft, botright;
+		for(i = TOP; i <= BOT; i++)
+		{
+			botleft = LEFT+i*mapWidth;
+			botright = RIGHT+i*mapWidth;
+
+			if(tilemap[botleft] == 1)
+			{
+				*x = LEFT;
+				*y = i;
+				return 1;
+			}
+			else if(tilemap[botright] == 1)
+			{
+				*x = RIGHT;
+				*y = i;
+				return 1;
+			}
+			else if(tilemap[botleft] == 2)
+			{
+				if(!checkBase(LEFT, i))
+					continue;
+				*x = LEFT;
+				*y = i;
+				return 2;
+			}
+			else if(tilemap[botright] == 2)
+			{
+				if(!checkBase(RIGHT, i))
+					continue;
+				*x = RIGHT;
+				*y = i;
+				return 2;
+			}
 		}
-		return 2;
+
 	}
+
+	else
+	{
+		int TOP = floor(playerY+.5);
+		int BOT = ceil(playerY+.5-delta);
+
+		int topleft, topright;
+		int botleft = LEFT+BOT*mapWidth;
+		int botright = RIGHT+BOT*mapWidth;
+		for(i = BOT; i >= TOP; i--)
+		{
+			topleft = LEFT+i*mapWidth;
+			topright = RIGHT+i*mapWidth;
+
+			if(tilemap[topleft] == 1)
+			{
+				*x = LEFT;
+				*y = i;
+				return 1;
+			}
+			else if(tilemap[topright] == 1)
+			{
+				*x = RIGHT;
+				*y = i;
+				return 1;
+			}
+			else if(tilemap[topleft] == 2)
+			{
+				if(!checkBase(LEFT, i))
+					continue;
+				*x = LEFT;
+				*y = i;
+				return 2;
+			}
+			else if(tilemap[topright] == 2)
+			{
+				if(!checkBase(RIGHT, i))
+					continue;
+				*x = RIGHT;
+				*y = i;
+				return 2;
+			}
+		}
+	}
+	
 	return 0;
 }
 
@@ -265,24 +330,24 @@ bool level_start() {
 	scene.update = &level_update;
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
-	
+
 	functionDir = 1;
 	functionGap = 1.0/64.0; //menor o valor, maior a precisão
 	functionPlot = false;
-	
+
 	cacheCount = 0;
 	plotTempo = 0;
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-	
+
 	setBase(3,8); //temp
-	
+
 	moving = false;
 	dead = false;
 	respawnTempo = 1;
 	baseTempo = 0;
-	
+
 	textboxPos = 1;
 	stopMoving();
 	input.text[0] = '\0';
@@ -315,6 +380,7 @@ void level_update() {
 		}
 		if (input.captureFinish && functionPlot) {
 			startMoving();
+			playerPrevY = playerY;
 		}
 		if (input.textUpdate) {
 			calculatePoints(false);
@@ -370,21 +436,23 @@ void level_update() {
 	}
 	if (moving && !dead) {
 		playerX += game.delta*2.5*baseTempo*functionDir;
+		playerPrevY = playerY;
 		playerY = zeroHeight-getValueOnCache(playerX-baseX)+baseY;
 		playerSpriteX = lerp(playerSpriteX,playerX,baseTempo);
 		playerSpriteY = lerp(playerSpriteY,playerY,baseTempo);
 		int x,y;
-		int collision = collide(&x,&y);
+		int collision = collide((playerY-playerPrevY),&x,&y);
 		if (collision == 1) {
+			if(fabs(playerSpriteY - y) > 1.5)
+				playerSpriteY = y;
 			dead = true;
 			respawnTempo = 2.5;
 		} else if (collision == 2) {
-			if (setBaseCheck(x,y)) {
-				stopMoving();
-				calculatePoints(true);
-				baseTempo = 1;
-				respawnTempo = 0;
-			}
+			setBase(x,y);
+			stopMoving();
+			calculatePoints(true);
+			baseTempo = 1;
+			respawnTempo = 0;
 		}
 	}
 	if (dead) {
@@ -410,11 +478,11 @@ void level_draw() {
 	} else {
 		weight = round(game.height/180.0);
 	}
-	
+
 	//inversa do tamanho do mapa, pra usar como porcentagem
 	double scaleX = 1.0/mapWidth;
 	double scaleY = 1.0/mapHeight;
-	
+
 	//desenha o tilemap
 	al_draw_filled_rectangle(px(0),py(0),px(1),py(1),al_map_rgb(51,51,51));
 	for (int t,y = 0; y < mapHeight; y++) {
@@ -427,11 +495,11 @@ void level_draw() {
 			}
 		}
 	}
-	
+
 	//posição do ponto 0 do gráfico
 	double offsetX = scaleX*(baseX+1);
 	double offsetY = scaleY*(baseY+1+lerp(zeroHeight,zeroHeightPrev,easeIn(zeroHeightTempo)));
-	
+
 	//desenha os eixos
 	BLENDALPHA();
 	ALLEGRO_COLOR axisColor = al_map_rgba(255,255,255,51);
@@ -472,7 +540,7 @@ void level_draw() {
 		gridOffset++;
 	}
 	BLENDDEFAULT();
-	
+
 	//desenha o guri
 	bool blink = respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)%2;
 	if (!blink) {
@@ -482,7 +550,7 @@ void level_draw() {
 			dead?al_map_rgb(255,51,0):al_map_rgb(255,192,0),weight*1.5
 		);
 	}
-	
+
 	//plota a função
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
@@ -512,7 +580,7 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-	
+
 	//textbox
 	float textboxHeight = textboxPos?.8:0;
 	BLENDALPHA();
