@@ -21,14 +21,21 @@
 #define FSCENE LEVEL
 
 bool loadFonts() {
-	LOADFONT(data.font_UbuntuR,game.height*7/135,Ubuntu-R.ttf);
-	LOADFONT(data.font_UbuntuB,game.height/15,Ubuntu-B.ttf);
+	//o número na direita indica o tamanho da fonte.
+	//como ele depende do tamanho da janela, a fonte é numerada
+	//de acordo com a porcentagem da altura da janela x1000.
+	// (7/135)*1000 = 51.851... ~= 52
+	// (1/15)*1000 = 66.6... ~= 67
+	LOADFONT(data.font_Regular52,game.height*7/135,Ubuntu-R.ttf);
+	LOADFONT(data.font_Regular37,game.height*5/135,Ubuntu-R.ttf);
+	LOADFONT(data.font_Bold67,game.height/15,Ubuntu-B.ttf);
 	return true;
 }
 
 void unloadFonts() {
-	UNLOADFONT(data.font_UbuntuR);
-	UNLOADFONT(data.font_UbuntuB);
+	UNLOADFONT(data.font_Regular52);
+	UNLOADFONT(data.font_Regular37);
+	UNLOADFONT(data.font_Bold67);
 }
 
 bool load() {

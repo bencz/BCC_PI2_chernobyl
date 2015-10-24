@@ -42,16 +42,15 @@ void settings_unload() {
 
 void settings_update() {
 	if (scene.tempo <= 0) {
-		if (input.enter->press) {
+		if (input.enter->press || input.escape->press) {
 			sceneLoad(MENU);
 		}
-
-		//n tem nada ainda, mas dá pra apertar o botão pra cima e pulsar a ovelha
-		if (input.up->press) {
+		//n tem nada ainda, mas dá pra apertar espaço e pulsar a ovelha
+		if (input.space->press) {
 			pulseTempo = 1.3;
-		} else if (input.up->release) {
+		} else if (input.space->release) {
 			pulseTempo = 1.5;
-		} else if (input.up->hold) {
+		} else if (input.space->hold) {
 			pulseTempo = lerp(pulseTempo,1.1,game.delta*10);
 		} else {
 			pulseTempo = lerp(pulseTempo,1,game.delta*10);
@@ -71,6 +70,6 @@ void settings_draw() {
 	al_draw_scaled_bitmap(data.bitmap_test,0,0,800,800,px(.5)-pulseTempo*sc*.5,py(.5)-pulseTempo*sc*.5,pulseTempo*sc,pulseTempo*sc,0);
 
 	//textos
-	al_draw_text(data.font_UbuntuR,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"configurações");
-	al_draw_text(data.font_UbuntuR,colorButton2,px(.5),py(.9),ALLEGRO_ALIGN_CENTRE,"voltar");
+	al_draw_text(data.font_Regular52,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_text(data.font_Regular52,colorButton2,px(.5),py(.9),ALLEGRO_ALIGN_CENTRE,"voltar");
 }

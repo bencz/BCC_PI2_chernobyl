@@ -32,7 +32,9 @@ void inputStart() {
 	input.right = initKey();
 	input.enter = initKey();
 	input.backspace = initKey();
+	input.space = initKey();
 	input.tab = initKey();
+	input.escape = initKey();
 	
 	input.text[0] = '\0';
 	input.captureText = false;
@@ -50,7 +52,9 @@ void inputUpdate() {
 	resetKey(input.right);
 	resetKey(input.enter);
 	resetKey(input.backspace);
+	resetKey(input.space);
 	resetKey(input.tab);
+	resetKey(input.escape);
 	
 	input.captureFinish = false;
 	input.textUpdate = false;
@@ -61,10 +65,6 @@ void inputUpdate() {
 }
 
 void inputKeyPress(ALLEGRO_EVENT ev) {
-	if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-		exitGame();
-		return;
-	}
 	key* k;
 	if (input.captureText) {
 		if (ev.type == ALLEGRO_EVENT_KEY_DOWN && ev.keyboard.keycode == ALLEGRO_KEY_ENTER) {
@@ -75,7 +75,10 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 			return;
 		}
 		switch (ev.keyboard.keycode) {
+			case ALLEGRO_KEY_UP: k = input.up; break;
+			case ALLEGRO_KEY_DOWN: k = input.down; break;
 			case ALLEGRO_KEY_TAB: k = input.tab; break;
+			case ALLEGRO_KEY_ESCAPE: k = input.escape; break;
 			default: return;
 		}
 	} else {
@@ -86,7 +89,9 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 			case ALLEGRO_KEY_RIGHT: k = input.right; break;
 			case ALLEGRO_KEY_ENTER: k = input.enter; break;
 			case ALLEGRO_KEY_BACKSPACE: k = input.backspace; break;
+			case ALLEGRO_KEY_SPACE: k = input.space; break;
 			case ALLEGRO_KEY_TAB: k = input.tab; break;
+			case ALLEGRO_KEY_ESCAPE: k = input.escape; break;
 			default: return;
 		}
 	}

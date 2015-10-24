@@ -62,8 +62,9 @@ double iy(int y);
 struct Data {
 	
 	//fontes
-	ALLEGRO_FONT *font_UbuntuR;
-	ALLEGRO_FONT *font_UbuntuB;
+	ALLEGRO_FONT *font_Regular52;
+	ALLEGRO_FONT *font_Regular37;
+	ALLEGRO_FONT *font_Bold67;
 	
 	//bitmaps
 	ALLEGRO_BITMAP *bitmap_test;
