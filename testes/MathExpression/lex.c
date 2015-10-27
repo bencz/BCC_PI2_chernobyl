@@ -10,15 +10,15 @@
 #include <string.h>
 #include "lex.h"
 
-#define LINESIZE        2048    
-#define NTOKEN          100000  
-#define MAXLINES        10000   
+#define LINESIZE        2048
+#define NTOKEN          100000
+#define MAXLINES        10000
 
 char *token[NTOKEN];
 int   nToken;
 int   numToken[MAXLINES];
 
-#define OPERATOR2 "== != <= >= >> << && || += -= *= /= ++ -- [] " 
+#define OPERATOR2 "== != <= >= >> << && || += -= *= /= ++ -- [] "
 
 void analiselexica(unsigned char *linebuffer, int printLexemas)
 {
@@ -97,26 +97,87 @@ unsigned char* concat(unsigned char *s1, unsigned char *s2)
 	return result;
 }
 
-void processaexpressao(unsigned char *expr)
+char *funcs[] =
 {
-	int i = 0;
+	"sin",
+	"cos",
+	"tan",
+	"asin",
+	"acos",
+	"atan",
+	"exp",
+	"ln",
+	"log",
+	"sqrt",
+	"sqr",
+	"floor",
+	"ceil",
+	"abs",
+	"hypot",
+	"rss",
+	"deg",
+	"rad"
+};
+
+int funcaoExiste(char *func)
+{
+	int i = 0, b = 18;
+	for (; i < b; i++)
+	{
+		if (!strcmp(func, funcs[i]))
+			return 1;
+	}
+	return 0;
+}
+
+int processaexpressao(unsigned char *expr, int i)
+{
 	const int tamAnte = 128;
 	unsigned char *expt = calloc(sizeof(unsigned char), LINESIZE);
 	unsigned char *ante = calloc(sizeof(unsigned char), tamAnte);
 	memset(expt, '\0', LINESIZE);
 	memset(ante, '\0', tamAnte);
 
-	for (; i<nToken; i++)
+	for (; i < nToken; i++)
 	{
 		if ((isalpha(token[i][0]) && isdigit(ante[0])) || isalpha(ante[0]) && token[i][0] == '(')
 		{
-			expt = concat(expt, "*");
-			expt = concat(expt, token[i]);
+			// coloquei a função aqui dentro para que ele nao entre no FOR
+			// da função funcaoExiste, toda vez que passar pelo if aqui de cima!
+			if (!funcaoExiste(token[i - 1]))
+			{
+				expt = concat(expt, "*");
+				expt = concat(expt, token[i]);
+			}
 		}
+
 		else if (isdigit(token[i][0]) && isalpha(ante[0]))
 		{
 			expt = concat(expt, "^");
 			expt = concat(expt, token[i]);
+		}
+		else if (token[i + 1] != NULL && (token[i + 1][0] == '^' && token[i - 1][0] == '-'))
+		{
+			expt = concat(expt, "(");
+			expt = concat(expt, token[i]);
+			expt = concat(expt, token[i + 1]);
+			if (token[i + 2][0] == '(')
+			{
+				unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
+				i = (processaexpressao(tmp, i + 2)) - 1;
+				expt = concat(expt, tmp);
+				expt = concat(expt, ")");
+				free(tmp);
+				continue;
+			}
+			else
+			{
+				expt = concat(expt, token[i + 2]);
+				expt = concat(expt, ")");
+				i += 2;
+				ante = token[i];
+				continue;
+			}
 		}
 		else
 			expt = concat(expt, token[i]);
@@ -126,4 +187,5 @@ void processaexpressao(unsigned char *expr)
 	memcpy(expr, expt, strlen(expt));
 	free(expt);
 	free(ante);
+	return i;
 }
