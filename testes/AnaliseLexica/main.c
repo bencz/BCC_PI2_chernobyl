@@ -1,43 +1,17 @@
 #include <stdio.h>
-#include "parserexpressao.h"
-
-int main(int argc, char *argv[])
-{
-	int flag = 0, errorCode = 10;
-	double result;
-	double valor = 10;
-	char *expr = "(-x(2+29x)+2x)/(x(2+2) + x2)";
-
-	setavariavel("x", &valor);
-	errorCode = calcula(expr, &result, &flag);
-
-	printf("Codigo de erro: %d\n", errorCode);
-	if (errorCode != E_OK)
-		printf("Mensagem de erro: %s\n", mensagensDeErro[errorCode - 1]);
-	printf("Flag: %d\n", flag);
-	printf("Resultado: %f\n", result);
-
-	return 0;
-}
-
-/*#if !defined(_CRT_SECURE_NO_WARNINGS)
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 
-#define LINESIZE        1024
-#define NTOKEN          100000
-#define MAXLINES        10000
+#define LINESIZE        1024    
+#define NTOKEN          100000  
+#define MAXLINES        10000   
 
 char *token[NTOKEN];
 int   nToken;
 int   numToken[MAXLINES];
 
-#define OPERATOR2 "== != <= >= >> << && || += -= *= /= ++ -- [] "
+#define OPERATOR2 "== != <= >= >> << && || += -= *= /= ++ -- [] " 
 
 void analiselexica(char *linebuffer, int printLexemas)
 {
@@ -98,7 +72,7 @@ void analiselexica(char *linebuffer, int printLexemas)
 		buf[lenToken] = '\0';
 
 		token[nToken++] = _strdup(buf);
-		if (printLexemas == 1)
+		if(printLexemas == 1)
 			printf("[%3d]: %s\n", nToken, buf);
 	}
 }
@@ -116,49 +90,47 @@ char* concat(char *s1, char *s2)
 	return result;
 }
 
-void *processaexpressao(char *expr)
+void processaexpressao(char *expr)
 {
-	int i = 0;
-	const int tamAnte = 128;
-	char *exprNovo = malloc(sizeof(char) * 2048);
-	char *ante = malloc(sizeof(char) * tamAnte);
-	memset(exprNovo, '\0', 2048);
+  int i = 0;
+  const int tamAnte = 128;
+  char *ante = malloc(sizeof(char) * tamAnte);
 	memset(ante, '\0', tamAnte);
 
 	for (; i<nToken; i++)
 	{
 		if ((isalpha(token[i][0]) && isdigit(ante[0])) || isalpha(ante[0]) && token[i][0] == '(')
 		{
-			exprNovo = concat(exprNovo, "*");
-			exprNovo = concat(exprNovo, token[i]);
+			expr = concat(expr, "*");
+			expr = concat(expr, token[i]);
 		}
 		else if (isdigit(token[i][0]) && isalpha(ante[0]))
 		{
-			exprNovo = concat(exprNovo, "^");
-			exprNovo = concat(exprNovo, token[i]);
+			expr = concat(expr, "^");
+			expr = concat(expr, token[i]);
 		}
 		else
-			exprNovo = concat(exprNovo, token[i]);
+			expr = concat(expr, token[i]);
 
 		ante = token[i];
 	}
-	memcpy(expr, exprNovo, strlen(expr));
-	free(ante);
+  free(ante);
 }
 
 int main(int argc, char* argv[])
 {
 	int i = 0;
 	char *teste = "(-x(2+29x)+2x)/(x(2+2))";
-
-	const int tamExpr = 1048;
+ 
+  const int tamExpr = 1048; 
 	char *expr = malloc(sizeof(char) * tamExpr);
-	memset(expr, '\0', tamExpr);
+  memset(expr, '\0', tamExpr);
 
 	analiselexica(teste, 0);
-	processaexpressao(teste);
-
+  processaexpressao(expr);
+	
 	printf("%s\n", expr);
 	free(expr);
 	return 0;
-}*/
+}
+

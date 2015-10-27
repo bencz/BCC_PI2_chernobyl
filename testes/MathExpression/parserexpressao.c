@@ -1,3 +1,7 @@
+#if !defined(_CRT_SECURE_NO_WARNINGS)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +9,7 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include "parserexpressao.h"
+#include "lex.h"
 
 typedef float real;
 typedef unsigned long ulong;
@@ -168,7 +173,6 @@ int pegavariavel(char *nome, double *valor)
 
 int setavariavel(char *nome, double *valor)
 {
-	char b[30];
 	int  i;
 
 	limpavariavel(nome);
@@ -407,6 +411,7 @@ static void level6(double *r)
 	}
 }
 
+#if !defined(_MSC_VER)
 char *_strlwr(char *str)
 {
   char *ret = str;
@@ -418,14 +423,25 @@ char *_strlwr(char *str)
   }
   return ret;
 }
+#endif
 
 int calcula(char *expr, double *resultado, int *flag)
 {
 	if (setjmp(jb))
 		return ERRO;
-	expressao = expr;
-	ERANC = expr;
-  _strlwr(expressao);
+
+	// TODO
+	const int LINESIZE = 2048; // TROCAR ISSO PELO DEFINE!!!
+	unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
+	memcpy(tmp, expr, strlen(expr));
+
+	analiselexica(tmp, 0);
+	memset(tmp, '\0', 2048);
+	processaexpressao(tmp);
+
+	expressao = tmp;
+	ERANC = tmp;
+	_strlwr(expressao);
 	*resultado = 0;
 	parse();
 	if (!*token)
