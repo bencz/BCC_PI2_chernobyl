@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "input.h"
 #include "game.h"
+#include "draw.h"
 #include "parserexpressao.h"
 
 #define CACHE_MAX 2200
@@ -64,7 +65,9 @@ bool errorMsgShow; //mostrar uma mensagem de erro ou não
 int errorMsg; //índice da mensagem de erro
 
 double playerX,playerY,playerPrevY; //posição do jogador
-double playerSpriteX,playerSpriteY; //posição do jogador
+double playerSpriteX,playerSpriteY; //posição do sprite do jogador
+int playerSequence; //índice da animação do jogador
+float playerFrame; //índice do frame da animação
 bool moving; //tá movendo
 bool dead; //tá morrendo
 float respawnTempo; //tempo de respawn, pra animação dele piscando
@@ -324,11 +327,11 @@ bool level_start() {
 	scene.update = &level_update;
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
-
+	
 	functionDir = 1;
 	functionGap = 1.0/64.0; //menor o valor, maior a precisão
 	functionPlot = false;
-
+	
 	cacheCount = 0;
 	plotTempo = 0;
 	dottedTempo = 0;
@@ -336,14 +339,17 @@ bool level_start() {
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-
+	
 	setBase(3,8); //temp
-
+	
+	playerSequence = 0;
+	playerFrame = 0;
+	
 	moving = false;
 	dead = false;
 	respawnTempo = 1;
 	baseTempo = 0;
-
+	
 	textboxPos = 1;
 	textboxPosTempo = 1;
 	textboxSizeTempo = 0;
@@ -354,17 +360,17 @@ bool level_start() {
 	input.captureFinish = false;
 	input.caretPos = 0;
 	input.selectionStart = -1;
-
+	
 	return true;
 }
 
 bool level_load() {
-	//carregar assets específicos da fase
+	LOADBITMAP(data.bitmap_playerIdle,playerIdle.png);
 	return true;
 }
 
 void level_unload() {
-	//descarregar esses assets
+	UNLOADBITMAP(data.bitmap_playerIdle);
 }
 
 void level_update() {
@@ -469,6 +475,10 @@ void level_update() {
 			baseTempo -= game.delta*1.5;
 			if (baseTempo < 0) baseTempo = 0;
 		}
+	}
+	playerFrame += game.delta*20;
+	while (playerFrame >= 20) {
+		playerFrame -= 20;
 	}
 	
 	//movimentação do jogador
@@ -633,11 +643,15 @@ void level_draw() {
 	//desenha o guri
 	bool blink = respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)%2;
 	if (!blink) {
-		al_draw_rectangle(
-			px((playerSpriteX+0.5)*scaleX),py((playerSpriteY+0.5)*scaleY),
-			px((playerSpriteX+1.5)*scaleX),py((playerSpriteY+1.5)*scaleY),
-			dead?al_map_rgb(255,51,0):al_map_rgb(255,192,0),weight*1.5
-		);
+		int cx,cy;
+		ALLEGRO_BITMAP *bm;
+		switch (playerSequence) {
+			case 0: cx = 5; cy = 4; bm = data.bitmap_playerIdle; break;
+			default: bm = NULL;
+		}
+		if (bm != NULL) {
+			drawSpriteSheet(bm,(playerSpriteX+1)*scaleX,(playerSpriteY+1)*scaleY,.09,.09,cx,cy,(int)playerFrame,0,0,0);
+		}
 	}
 	
 	//plota a função

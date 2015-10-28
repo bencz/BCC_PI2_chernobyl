@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "input.h"
 #include "game.h"
+#include "draw.h"
 
 float pulseTempo;
 
@@ -66,8 +67,7 @@ void settings_draw() {
 	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 
 	//ovelha
-	float sc = game.height*.25;
-	al_draw_scaled_bitmap(data.bitmap_test,0,0,800,800,px(.5)-pulseTempo*sc*.5,py(.5)-pulseTempo*sc*.5,pulseTempo*sc,pulseTempo*sc,0);
+	drawBitmap(data.bitmap_test,.5,.5,pulseTempo*.25,pulseTempo*.25,0,0,0);
 
 	//textos
 	al_draw_text(data.font_Regular52,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"configurações");
