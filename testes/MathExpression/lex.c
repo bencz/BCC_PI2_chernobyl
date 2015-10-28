@@ -22,6 +22,7 @@ int   numToken[MAXLINES];
 
 void analiselexica(unsigned char *linebuffer, int printLexemas)
 {
+	nToken = 0;
 	char buf[LINESIZE + 1], *p, *pBgn;
 	int  lenToken;
 
@@ -149,6 +150,8 @@ int processaexpressao(unsigned char *expr, int i)
 				expt = concat(expt, "*");
 				expt = concat(expt, token[i]);
 			}
+			else
+				expt = concat(expt, token[i]);
 		}
 
 		else if (isdigit(token[i][0]) && isalpha(ante[0]))
@@ -156,12 +159,26 @@ int processaexpressao(unsigned char *expr, int i)
 			expt = concat(expt, "^");
 			expt = concat(expt, token[i]);
 		}
-		else if (token[i + 1] != NULL && (token[i + 1][0] == '^' && token[i - 1][0] == '-'))
+		else if ((token[i + 1] != NULL && token[i - 1] != NULL) &&
+				 (isdigit(token[i + 1][0]) && isalpha(token[i][0]) && token[i - 1][0] == '-'))
+		{
+			expt = concat(expt, "(");
+			expt = concat(expt, token[i]);
+			expt = concat(expt, "^");
+			unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
+			i = (processaexpressao(tmp, i + 1)) - 1;
+			expt = concat(expt, tmp);
+			expt = concat(expt, ")");
+			free(tmp);
+			continue;
+		}
+		else if ((token[i + 1] != NULL && token[i - 1] != NULL) && 
+				 (token[i + 1][0] == '^' && token[i - 1][0] == '-'))
 		{
 			expt = concat(expt, "(");
 			expt = concat(expt, token[i]);
 			expt = concat(expt, token[i + 1]);
-			if (token[i + 2][0] == '(')
+			if (token[i + 2] != NULL && (token[i + 2][0] == '('))
 			{
 				unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
 				i = (processaexpressao(tmp, i + 2)) - 1;
