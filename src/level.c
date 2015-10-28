@@ -17,6 +17,8 @@
 
 const int mapWidth = 32;
 const int mapHeight = 18;
+const double playerRadius = 2.0/3.0;
+const bool debugCollision = true;
 
 int tilemap[] = {
 //	1                    8                      16                      24                      32
@@ -216,97 +218,62 @@ void openTextbox() {
 	}
 }
 
-int collide(double delta, int *x,int *y) {
-
-	//printf("%lf\n", delta);
-
+int collideStep(int j,int m,int n,int *x,int *y) {
 	int i;
-	int LEFT = floor(playerX+.5);
-	int RIGHT = ceil(playerX+.5);
-
-	if(delta > 0)
-	{
-		int TOP = floor(playerY+.5-delta);
-		int BOT = ceil(playerY+.5);
-		int botleft, botright;
-		for(i = TOP; i <= BOT; i++)
-		{
-			botleft = LEFT+i*mapWidth;
-			botright = RIGHT+i*mapWidth;
-
-			if(tilemap[botleft] == 1)
-			{
-				*x = LEFT;
-				*y = i;
-				return 1;
-			}
-			else if(tilemap[botright] == 1)
-			{
-				*x = RIGHT;
-				*y = i;
-				return 1;
-			}
-			else if(tilemap[botleft] == 2)
-			{
-				if(!checkBase(LEFT, i))
-					continue;
-				*x = LEFT;
-				*y = i;
-				return 2;
-			}
-			else if(tilemap[botright] == 2)
-			{
-				if(!checkBase(RIGHT, i))
-					continue;
-				*x = RIGHT;
-				*y = i;
-				return 2;
-			}
+	int t,b = -1;
+	for (i = m; i <= n; i++) {
+		t = getTile(i,j);
+		if (t == 1) {
+			*x = i;
+			*y = j;
+			return 1;
 		}
-
-	}
-
-	else
-	{
-		int TOP = floor(playerY+.5);
-		int BOT = ceil(playerY+.5-delta);
-		int topleft, topright;
-		for(i = BOT; i >= TOP; i--)
-		{
-			topleft = LEFT+i*mapWidth;
-			topright = RIGHT+i*mapWidth;
-
-			if(tilemap[topleft] == 1)
-			{
-				*x = LEFT;
-				*y = i;
-				return 1;
-			}
-			else if(tilemap[topright] == 1)
-			{
-				*x = RIGHT;
-				*y = i;
-				return 1;
-			}
-			else if(tilemap[topleft] == 2)
-			{
-				if(!checkBase(LEFT, i))
-					continue;
-				*x = LEFT;
-				*y = i;
-				return 2;
-			}
-			else if(tilemap[topright] == 2)
-			{
-				if(!checkBase(RIGHT, i))
-					continue;
-				*x = RIGHT;
-				*y = i;
-				return 2;
-			}
+		if (b == -1 && t == 2 && checkBase(i,j)) {
+			b = i;
 		}
 	}
-	
+	if (b != -1) {
+		*x = b;
+		*y = j;
+		return 2;
+	}
+	return 0;
+}
+
+int collide(double delta,int *x,int *y,int debug) {
+	int i,j;
+	int left = floor(playerX-playerRadius)+1;
+	int right = ceil(playerX+playerRadius);
+	if (left < 0) left = 0;
+	if (right >= mapWidth) right = mapWidth-1;
+	int top,bot;
+	if (delta > 0) {
+		top = floor(playerY-playerRadius-delta)+1;
+		bot = ceil(playerY+playerRadius);
+		if (top < 0) top = 0;
+		if (bot >= mapHeight) bot = mapHeight-1;
+		if (debug) {
+			BLENDALPHA();
+			al_draw_filled_rectangle(px(left/32.0),py(top/18.0),px((right+1)/32.0),py((bot+1)/18.0),al_map_rgba(255,0,0,100));
+			BLENDDEFAULT();
+		} else for (i = top; i <= bot; i++) {
+			j = collideStep(i,left,right,x,y);
+			if (j) return j;
+		}
+	} else {
+		top = floor(playerY-playerRadius)+1;
+		bot = ceil(playerY+playerRadius-delta);
+		if (top < 0) top = 0;
+		if (bot >= mapHeight) bot = mapHeight-1;
+		if (debug) {
+			BLENDALPHA();
+			al_draw_filled_rectangle(px(left/32.0),py(top/18.0),px((right+1)/32.0),py((bot+1)/18.0),al_map_rgba(255,0,0,100));
+			BLENDDEFAULT();
+		} else for (i = bot; i >= top; i--) {
+			j = collideStep(i,left,right,x,y);
+			if (j) return j;
+		}
+	}
 	return 0;
 }
 
@@ -501,7 +468,7 @@ void level_update() {
 		playerSpriteX = lerp(playerSpriteX,playerX,baseTempo);
 		playerSpriteY = lerp(playerSpriteY,playerY,baseTempo);
 		int x,y;
-		int collision = collide((playerY-playerPrevY),&x,&y);
+		int collision = collide((playerY-playerPrevY),&x,&y,0);
 		if (collision == 1) {
 			if (fabs(playerSpriteY-y) >= 2) {
 				playerSpriteY = y;
@@ -641,7 +608,7 @@ void level_draw() {
 	BLENDDEFAULT();
 	
 	//desenha o guri
-	bool blink = respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)%2;
+	bool blink = respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*10)&1;
 	if (!blink) {
 		int cx,cy;
 		ALLEGRO_BITMAP *bm;
@@ -650,7 +617,18 @@ void level_draw() {
 			default: bm = NULL;
 		}
 		if (bm != NULL) {
-			drawSpriteSheet(bm,(playerSpriteX+1)*scaleX,(playerSpriteY+1)*scaleY,.09,.09,cx,cy,(int)playerFrame,0,0,0);
+			drawSpriteSheet(bm,(playerSpriteX+1)*scaleX,(playerSpriteY+1)*scaleY,scaleY*2,scaleY*2,cx,cy,(int)playerFrame,0,0,0);
+			if (debugCollision) {
+				al_draw_rectangle(
+					px((playerSpriteX+1-playerRadius)*scaleX),py((playerSpriteY+1-playerRadius)*scaleY),
+					px((playerSpriteX+1+playerRadius)*scaleX),py((playerSpriteY+1+playerRadius)*scaleY),
+					al_map_rgb(255,51,0),weight
+				);
+				if (moving && !dead) {
+					int x,y;
+					collide(playerY-playerPrevY,&x,&y,1);
+				}
+			}
 		}
 	}
 	
