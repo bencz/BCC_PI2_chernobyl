@@ -13,6 +13,7 @@ void sceneLoad(SceneID id) {
 	//prepara a transição para a cena escolhida
 	scene.nextScene = id;
 	scene.tempo = 1;
+	input.captureText = false;
 }
 
 bool sceneSelect(SceneID id) {
