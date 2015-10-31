@@ -1,8 +1,8 @@
 como as fases funcionam atualmente:
 
-**largura do mapa**: 32
-**altura do mapa**: 18
-**tamanho das tiles**: 32x32
+- **largura do mapa**: 32
+- **altura do mapa**: 18
+- **tamanho das tiles**: 32x32
 
 apenas dois tilesets devem existir.
 - **tilesetCollision** *(armazenado em data/bitmap/tilesetCollision.png)*, com dois blocos: o da esquerda para colisão e o da direita para bases. este tileset será exclusivamente usado na camada collision;
