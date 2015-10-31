@@ -48,5 +48,5 @@ void drawSpriteSheet(ALLEGRO_BITMAP *bitmap,double x,double y,double w,double h,
 	anchorY++;
 	if (anchorX) x -= anchorX*(w/game.idealProp)/2;
 	if (anchorY) y -= anchorY*h/2;
-	al_draw_scaled_bitmap(bitmap,width*(c%sx),height*(c/sx),width,height,dx(x),dy(y),w*game.height,h*game.height,flags);
+	al_draw_scaled_bitmap(bitmap,width*(c%sx)+1,height*(c/sx)+1,width-2,height-2,dx(x),dy(y),w*game.height,h*game.height,flags);
 }

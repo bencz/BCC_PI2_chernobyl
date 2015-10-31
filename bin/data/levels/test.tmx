@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="18" tilewidth="32" tileheight="32" nextobjectid="12">
- <tileset firstgid="1" name="tileCollision" tilewidth="32" tileheight="32" tilecount="2">
-  <image source="../bitmaps/tileCollision.png" width="64" height="32"/>
+ <tileset firstgid="1" name="tilesetCollision" tilewidth="32" tileheight="32" tilecount="2">
+  <image source="../bitmaps/tilesetCollision.png" width="64" height="32"/>
  </tileset>
- <tileset firstgid="3" name="tileTest" tilewidth="32" tileheight="32" tilecount="5">
-  <image source="../bitmaps/tileTest.png" width="160" height="32"/>
+ <tileset firstgid="3" name="tileset" tilewidth="32" tileheight="32" tilecount="5">
+  <image source="../bitmaps/tileset.png" width="160" height="32"/>
  </tileset>
  <layer name="parallax" width="32" height="18">
   <data encoding="csv">
@@ -72,7 +72,7 @@
 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5
 </data>
  </layer>
- <layer name="collision" width="32" height="18" opacity="0.12">
+ <layer name="collision" width="32" height="18" opacity="0.53">
   <data encoding="csv">
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,

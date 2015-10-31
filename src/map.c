@@ -4,7 +4,9 @@
 
 #include <math.h>
 
+#include "game.h"
 #include "map.h"
+#include "sxmlc.h"
 
 void setTile(int t[mapTotal],int x,int y,int v) {
 	t[x+y*mapWidth] = v;
@@ -17,10 +19,10 @@ void setTileSafe(int t[mapTotal],int x,int y,int v) {
 
 TMap* createMap() {
 	TMap *map = (TMap*)malloc(sizeof(TMap));
-	map->collision = (int*)malloc(sizeof(int)*mapTotal);
-	map->front = (int*)malloc(sizeof(int)*mapTotal);
-	map->back = (int*)malloc(sizeof(int)*mapTotal);
-	map->parallax = (int*)malloc(sizeof(int)*mapTotal);
+	map->collision = (int*)calloc(mapTotal,sizeof(int));
+	map->front = (int*)calloc(mapTotal,sizeof(int));
+	map->back = (int*)calloc(mapTotal,sizeof(int));
+	map->parallax = (int*)calloc(mapTotal,sizeof(int));
 	map->basesN = 0;
 	map->bases = NULL;
 	map->wiresN = 0;
@@ -47,8 +49,8 @@ TWire createWire(int n) {
 	TWire wire;
 	wire.n = n;
 	wire.nodes = (int2*)malloc(sizeof(int2)*n);
-	wire.base0 = -1;
-	wire.base1 = -1;
+	wire.base0 = -2;
+	wire.base1 = -2;
 	return wire;
 }
 
@@ -76,16 +78,25 @@ void fixMap(TMap *map) {
 	TBase *base;
 	TWire *wire;
 	int2 *node;
-	for (int a = 0; a < map->basesN; a++) {
-		base = &map->bases[a];
-		setTile(map->collision,base->x-1,base->y-1,2);
-		setTile(map->collision,base->x-1,base->y,2);
-		setTile(map->collision,base->x,base->y-1,2);
-		setTile(map->collision,base->x,base->y,2);
-		for (int b = 0; b < map->wiresN; b++) {
-			if (map->wires[b].n <= 1) continue;
-			wire = &map->wires[b];
-			node = wire->nodes;
+	for (int b = 0; b < map->wiresN; b++) {
+		if (map->wires[b].n <= 1) continue;
+		wire = &map->wires[b];
+		node = wire->nodes;
+		if (node->x >= mapWidth) {
+			node->x = mapWidth;
+			wire->base0 = -1;
+		} else if (node->x <= 0) {
+			node->x = 0;
+			wire->base0 = -1;
+		} else if (node->y >= mapHeight) {
+			node->y = mapHeight;
+			wire->base0 = -1;
+		} else if (node->y <= 0) {
+			node->y = 0;
+			wire->base0 = -1;
+		}
+		for (int a = 0; a < map->basesN; a++) {
+			base = &map->bases[a];
 			if (node->x == base->x) {
 				if (node->y == base->y-1) {
 					base->wireUp = wire;
@@ -107,7 +118,23 @@ void fixMap(TMap *map) {
 					wire->base0 = a;
 				}
 			}
-			node = &wire->nodes[wire->n-1];
+		}
+		node = &wire->nodes[wire->n-1];
+		if (node->x >= mapWidth) {
+			node->x = mapWidth;
+			wire->base1 = -1;
+		} else if (node->x <= 0) {
+			node->x = 0;
+			wire->base1 = -1;
+		} else if (node->y >= mapHeight) {
+			node->y = mapHeight;
+			wire->base1 = -1;
+		} else if (node->y <= 0) {
+			node->y = 0;
+			wire->base1 = -1;
+		}
+		for (int a = 0; a < map->basesN; a++) {
+			base = &map->bases[a];
 			if (node->x == base->x) {
 				if (node->y == base->y-1) {
 					base->wireUp = wire;
@@ -149,105 +176,286 @@ void freeMapFull(TMap *map) {
 	free(map);
 }
 
+int getWireIndex(const TMap *map,const TWire *wire) {
+	//fiz essa função só por causa do debugMap mesmo
+	for (int a = 0; a < map->wiresN; a++) {
+		if (&map->wires[a] == wire) return a;
+	}
+	return -1;
+}
+
 void debugMap(const TMap *map) {
-	printf(">> map\n");
 	for (int a = 0; a < map->basesN; a++) {
 		printf("> base #%d (%dx%d)",a,map->bases[a].x,map->bases[a].y);
-		printf("\nup: ");
-		if (map->bases[a].wireUp == NULL) printf("N/A");
-		else printf("%d",map->bases[a].wireUpDir);
-		printf("\ndown: ");
-		if (map->bases[a].wireDown == NULL) printf("N/A");
-		else printf("%d",map->bases[a].wireDownDir);
-		printf("\nleft: ");
-		if (map->bases[a].wireLeft == NULL) printf("N/A");
-		else printf("%d",map->bases[a].wireLeftDir);
-		printf("\nright: ");
-		if (map->bases[a].wireRight == NULL) printf("N/A");
-		else printf("%d",map->bases[a].wireRightDir);
+		if (map->bases[a].wireUp != NULL) printf("\nup: wire #%d (dir.: %d)",getWireIndex(map,map->bases[a].wireUp),map->bases[a].wireUpDir);
+		if (map->bases[a].wireDown != NULL) printf("\ndown: wire #%d (dir.: %d)",getWireIndex(map,map->bases[a].wireDown),map->bases[a].wireDownDir);
+		if (map->bases[a].wireLeft != NULL) printf("\nleft: wire #%d (dir.: %d)",getWireIndex(map,map->bases[a].wireLeft),map->bases[a].wireLeftDir);
+		if (map->bases[a].wireRight != NULL) printf("\nright: wire #%d (dir.: %d)",getWireIndex(map,map->bases[a].wireRight),map->bases[a].wireRightDir);
 		printf("\n");
 	}
 	for (int a = 0; a < map->wiresN; a++) {
 		printf("> wire #%d",a);
-		printf("\nstart (%dx%d): ",map->wires[a].nodes[0].x,map->wires[a].nodes[0].y);
-		if (map->wires[a].base0 < 0) printf("N/A");
-		else printf("base #%d (%dx%d)",map->wires[a].base0,map->bases[map->wires[a].base0].x,map->bases[map->wires[a].base0].y);
-		printf("\nend (%dx%d): ",map->wires[a].nodes[map->wires[a].n-1].x,map->wires[a].nodes[map->wires[a].n-1].y);
-		if (map->wires[a].base1 < 0) printf("N/A");
-		else printf("base #%d (%dx%d)",map->wires[a].base1,map->bases[map->wires[a].base1].x,map->bases[map->wires[a].base1].y);
+		if (map->wires[a].base0 == -1) printf("\nstart (%dx%d): new map",map->wires[a].nodes[0].x,map->wires[a].nodes[0].y);
+		else if (map->wires[a].base0 >= 0) printf("\nstart (%dx%d): base #%d (%dx%d)",map->wires[a].nodes[0].x,map->wires[a].nodes[0].y,map->wires[a].base0,map->bases[map->wires[a].base0].x,map->bases[map->wires[a].base0].y);
+		if (map->wires[a].base1 == -1) printf("\nend (%dx%d): new map",map->wires[a].nodes[map->wires[a].n-1].x,map->wires[a].nodes[map->wires[a].n-1].y);
+		else if (map->wires[a].base1 >= 0) printf("\nend (%dx%d): base #%d (%dx%d)",map->wires[a].nodes[map->wires[a].n-1].x,map->wires[a].nodes[map->wires[a].n-1].y,map->wires[a].base1,map->bases[map->wires[a].base1].x,map->bases[map->wires[a].base1].y);
 		printf("\n");
 	}
+	printf("\n");
 }
 
-void loadMap(TMap *map,const char *path) {
-	//enqto n tem nada q leia os .tmx
-	//aqui um monte de coisa temporária
+//vars pra leitura do xml
+TMap *mapr; //mapa sendo lido
+int tc; //índice marcando o início da id de colisão
+int tt; //índice marcando o início da id do tilemap normal
+int *tm; //ptr pra uma matriz de tiles
+int tmm; //indica se é para varrer tiles no próximo texto
+int tr; //número de cabos alocado
+int tox,toy; //posição do objeto atual
+
+int parseInt(char *s) {
+	int r = 0;
+	int n = 0;
+	while (*s != '\0') {
+		if (*s >= '0' && *s <= '9') {
+			if (!n) n = 1;
+			r = r*10+(*s-'0');
+		} else if (!n && *s == '-') n = -1;
+		s++;
+	}
+	return r*n;
+}
+
+int loadMapStart(const XMLNode *node,SAX_Data *sd) {
+	int a;
+	if (!strcmp(node->tag,"tileset")) {
+		int i = 0;
+		int *p = NULL;
+		for (a = 0; a < node->n_attributes; a++) {
+			if (!strcmp(node->attributes[a].name,"firstgid")) {
+				i = parseInt(node->attributes[a].value);
+			} else if (!strcmp(node->attributes[a].name,"name")) {
+				if (!strcmp(node->attributes[a].value,"tileset")) {
+					p = &tt;
+				} else if (!strcmp(node->attributes[a].value,"tilesetCollision")) {
+					p = &tc;
+				}
+			}
+		}
+		if (p != NULL && i > 0) {
+			if (p == &tc) {
+				tc = i-1;
+			} else {
+				*p = i;
+			}
+		}
+	} else if (!strcmp(node->tag,"layer")) {
+		for (a = 0; a < node->n_attributes; a++) {
+			if (!strcmp(node->attributes[a].name,"name")) {
+				if (!strcmp(node->attributes[a].value,"collision")) {
+					tm = mapr->collision;
+				} else if (!strcmp(node->attributes[a].value,"front")) {
+					tm = mapr->front;
+				} else if (!strcmp(node->attributes[a].value,"back")) {
+					tm = mapr->back;
+				} else if (!strcmp(node->attributes[a].value,"parallax")) {
+					tm = mapr->parallax;
+				} else {
+					tm = NULL;
+				}
+				break;
+			}
+		}
+	} else if (!strcmp(node->tag,"data")) {
+		if (tm != NULL) for (a = 0; a < node->n_attributes; a++) {
+			if (!strcmp(node->attributes[a].name,"encoding")) {
+				if (strcmp(node->attributes[a].value,"csv")) {
+					tm = NULL;
+				} else {
+					tmm = 1;
+				}
+				break;
+			}
+		}
+	} else if (!strcmp(node->tag,"object")) {
+		for (a = 0; a < node->n_attributes; a++) {
+			if (!strcmp(node->attributes[a].name,"x")) {
+				tox = parseInt(node->attributes[a].value)+16;
+			} else if (!strcmp(node->attributes[a].name,"y")) {
+				toy = parseInt(node->attributes[a].value)+16;
+			}
+		}
+	} else if (!strcmp(node->tag,"polyline")) {
+		if (tr == mapr->wiresN) {
+			tr += 4;
+			mapr->wires = (TWire*)realloc(mapr->wires,sizeof(TWire)*tr);
+			printf("realloc\n");
+		}
+		for (a = 0; a < node->n_attributes; a++) {
+			if (!strcmp(node->attributes[a].name,"points")) {
+				char *s = node->attributes[a].value;
+				int sp = 1;
+				int o,m;
+				for (o = 0; s[o] != '\0'; o++) {
+					if (s[o] == ' ') sp++;
+				}
+				if (o == 0) {
+					mapr->wiresN--;
+					break;
+				}
+				mapr->wires[mapr->wiresN] = createWire(sp);
+				m = 0;
+				o = 0;
+				int x = 0;
+				int y = 0;
+				int r = 0;
+				int n = 0;
+				while (1) {
+					if (s[o] == ',') {
+						x = (r*n+tox)/32;
+						r = 0;
+						n = 1;
+					} else if (s[o] == '\0' || s[o] == ' ') {
+						y = (r*n+toy)/32;
+						mapr->wires[mapr->wiresN].nodes[m++] = newint2(x,y);
+						if (s[o] == '\0' || m >= sp) break;
+						r = 0;
+						n = 1;
+					} else if (s[o] == '-') {
+						n = -1;
+					} else if (s[o] >= '0' && s[o] <= '9') {
+						r = r*10+s[o]-'0';
+					}
+					o++;
+				}
+				break;
+			}
+		}
+		mapr->wiresN++;
+	}
+	//object
+	return 1;
+}
+
+int loadMapText(SXML_CHAR *text,SAX_Data *sd) {
+	if (!tmm) return 1;
+	int colCheck = tm == mapr->collision;
+	int r = 0;
+	int a = 0;
+	while (1) {
+		if (*text == '\0') {
+			if (colCheck) {
+				if (r) {
+					r -= tc;
+				}
+			} else {
+				r -= tt;
+			}
+			tm[a] = r;
+			break;
+		}
+		if (*text == ',') {
+			if (colCheck) {
+				if (r) {
+					r -= tc;
+				}
+			} else {
+				r -= tt;
+			}
+			tm[a++] = r;
+			if (a >= mapTotal) break;
+			r = 0;
+		}
+		if (*text >= '0' && *text <= '9') {
+			r = r*10+*text-'0';
+		}
+		text++;
+	}
+	tmm = 0;
+	return 1;
+}
+
+int loadMapEnd(const XMLNode *node,SAX_Data *sd) {
+	return 1;
+}
+
+void loadMap(TMap *map,int x,int y) {
+	al_set_path_filename(game.path,mapList[mapGrid[y*mapGridWidth+x]]);
+	printf(">> map %dx%d (%s)\n",x,y,al_path_cstr(game.path,'/'));
 	
-	//preenche o tileset rapidão
-	for (int x = 1; x < mapWidth-1; x++) {
-		for (int y = 1; y < mapHeight-1; y++) {
-			setTile(map->collision,x,y,0);
+	XMLDoc doc;
+	XMLDoc_init(&doc);
+	SAX_Callbacks sax;
+	SAX_Callbacks_init(&sax);
+	sax.start_node = loadMapStart;
+	sax.new_text = loadMapText;
+	sax.end_node = loadMapEnd;
+	
+	mapr = map;
+	tc = 0;
+	tm = NULL;
+	tmm = 0;
+	tr = 4;
+	tox = toy = 0;
+	
+	map->wiresN = 0;
+	map->wires = (TWire*)malloc(sizeof(TWire)*tr);
+	
+	XMLDoc_parse_file_SAX(al_path_cstr(game.path,'/'),&sax,&sax);
+	XMLDoc_free(&doc);
+	
+	if (tr != mapr->wiresN) {
+		map->wires = (TWire*)realloc(map->wires,sizeof(TWire)*mapr->wiresN);
+	}
+	map->basesN = 0;
+	for (int x = 0; x < mapWidth; x++) {
+		for (int y = 0; y < mapHeight; y++) {
+			if (map->collision[y*mapWidth+x] == 2) {
+				if ((x != 0 && map->collision[y*mapWidth+x-1] == 2) &&
+					(y != 0 && map->collision[(y-1)*mapWidth+x] == 2)) {
+					map->basesN++;
+				}
+			}
 		}
 	}
-	for (int a = 0; a < 32; a++) {
-		setTile(map->collision,a,0,1);
-		setTile(map->collision,a,17,1);
+	if (map->basesN) {
+		map->bases = (TBase*)malloc(sizeof(TBase)*map->basesN);
+		int o = 0;
+		for (int x = 0; x < mapWidth; x++) {
+			for (int y = 0; y < mapHeight; y++) {
+				if (map->collision[y*mapWidth+x] == 2) {
+					if ((x != 0 && map->collision[y*mapWidth+x-1] == 2) &&
+						(y != 0 && map->collision[(y-1)*mapWidth+x] == 2)) {
+						map->bases[o++] = createBase(x,y);
+					}
+				}
+			}
+		}
 	}
-	for (int a = 1; a < 17; a++) {
-		setTile(map->collision,0,a,1);
-		setTile(map->collision,31,a,1);
-	}
 	
-	//monta as bases presentes
-	map->basesN = 2;
-	map->bases = (TBase*)malloc(sizeof(TBase)*map->basesN);
-	map->bases[0] = createBase(4,9);
-	map->bases[1] = createBase(28,9);
-	
-	//cria os circuitos que ligam uma base à outra
-	map->wiresN = 2;
-	map->wires = (TWire*)malloc(sizeof(TWire)*map->wiresN);
-	map->wires[0] = createWire(4);
-	map->wires[0].nodes[0] = newint2(4,8);
-	map->wires[0].nodes[1] = newint2(4,5);
-	map->wires[0].nodes[2] = newint2(28,5);
-	map->wires[0].nodes[3] = newint2(28,8);
-	map->wires[1] = createWire(8);
-	map->wires[1].nodes[0] = newint2(27,9);
-	map->wires[1].nodes[1] = newint2(26,9);
-	map->wires[1].nodes[2] = newint2(26,14);
-	map->wires[1].nodes[3] = newint2(22,14);
-	map->wires[1].nodes[4] = newint2(15,9);
-	map->wires[1].nodes[5] = newint2(8,14);
-	map->wires[1].nodes[6] = newint2(4,14);
-	map->wires[1].nodes[7] = newint2(4,10);
-	
-	//essa função arruma o tilemap pra colocar as bases
-	//e linka os circuitos com as bases
 	fixMap(map);
-	
-	//só pra ver se ta tudo funcionando
 	debugMap(map);
 	
 	/*
-	//	1                    8                      16                      24                      32
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //1
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, //9
-		1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //18
-	*/
+	map->wiresN = 6;
+	map->wires = (TWire*)malloc(sizeof(TWire)*map->wiresN);
+	map->wires[0] = createWire(2);
+	map->wires[0].nodes[0] = newint2(0,9);
+	map->wires[0].nodes[1] = newint2(3,9);
+	map->wires[1] = createWire(2);
+	map->wires[1].nodes[0] = newint2(29,9);
+	map->wires[1].nodes[1] = newint2(32,9);
+	map->wires[2] = createWire(2);
+	map->wires[2].nodes[0] = newint2(4,0);
+	map->wires[2].nodes[1] = newint2(4,8);
+	map->wires[3] = createWire(2);
+	map->wires[3].nodes[0] = newint2(4,10);
+	map->wires[3].nodes[1] = newint2(4,18);
+	map->wires[4] = createWire(2);
+	map->wires[4].nodes[0] = newint2(28,0);
+	map->wires[4].nodes[1] = newint2(28,8);
+	map->wires[5] = createWire(2);
+	map->wires[5].nodes[0] = newint2(28,10);
+	map->wires[5].nodes[1] = newint2(28,18);
+	//*/
 }
