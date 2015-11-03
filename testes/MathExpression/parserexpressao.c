@@ -55,6 +55,9 @@ static void level6(double *r);
 // Prototipos para as funções "custom" do programa
 double deg(double x);
 double rad(double x);
+double sqrt_p(double x);
+double log_p(double x);
+double ln_p(double x);
 
 #define PI    3.14159265358979323846
 #define M_E   2.71828182845904523536
@@ -87,8 +90,8 @@ FUNCAO funcoes[] =
     { "exp",     1,    exp },
     { "ln",      1,    log },
     { "log",     1,    log10 },
-    { "sqrt",    1,    sqrt },
-    { "sqr",     1,    sqrt },
+    { "sqrt",    1,    sqrt_p },
+    { "sqr",     1,    sqrt_p },
     { "floor",   1,    floor },
     { "ceil",    1,    ceil },
     { "abs",     1,    fabs },
@@ -113,6 +116,27 @@ double deg(double x)
 double rad(double x)
 {
     return (x*RPD);
+}
+
+double sqrt_p(double x)
+{
+	if(x < 0)
+		ERR(E_RAIZNEG);
+	return sqrt(x);
+}
+
+double log_p(double x)
+{
+	if(x <= 0)
+		ERR(E_LOGINV);
+	return log10(x);
+}
+
+double ln_p(double x)
+{
+	if(x <= 0)
+		ERR(E_LNINV)
+	return log(x);
 }
 
 int pegasimbolo(char *s, double *v)

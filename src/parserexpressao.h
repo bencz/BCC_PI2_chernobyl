@@ -12,18 +12,24 @@
 #define E_NUMARGS       7     // Numero incorreto de argumentos para a funcao 
 #define E_SEMARQ        8     // Esta faltando argumentos 
 #define E_VAZIA         9     // Expressao vazia 
+#define E_RAIZNEG      10     // Erro de raiz negativa
+#define E_LOGINV	   11     // Erro para log menor ou igual à zero
+#define E_LNINV        12     // Erro para ln menor ou igual à zero
 
 static const char* mensagensDeErro[] =
 {
-   "Erro de sintaxe",
-   "Falta parêntese",
-   "Divisão por zero",
-   "Variável desconhecida",
-   "Número máximo de variáveis excedido",
-   "Função não reconhecida",
-   "Número incorreto de argumentos para a função",
-   "Está faltando argumentos",
-   "Expressão vazia"
+   "Erro se sintaxe",
+   "Falta parentese",
+   "Divisao por zero",
+   "Variavel desconhecida",
+   "Numero maximo de variaveis excedido",
+   "Funcao nao reconhecida",
+   "Numero incorreto de argumentos para a funcao",
+   "Esta faltando argumentos",
+   "Expressao vazia",
+   "x não pode ser negativo para raiz quadrada",
+   "x não pode ser menor ou igual à 0 para log10",
+   "x não pode ser menor ou igual à 0 para ln"
 };
 
 int setavariavel(char *nome, double *valor);
