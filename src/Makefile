@@ -6,7 +6,7 @@ CFLAGS=-I$(IDIR) -g
 ODIR=obj
 LIBS=-lallegro -lallegro_audio -lallegro_acodec -lallegro_image -lallegro_font -lallegro_main -lallegro_ttf -lallegro_primitives -lm
 
-_OBJ = game.o level.o menu.o settings.o input.o main.o parserexpressao.o draw.o map.o utils.o sxmlc.o
+_OBJ = game.o level.o menu.o settings.o input.o main.o parserexpressao.o draw.o map.o utils.o sxmlc.o lex.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 OUTPUTDIR = ../bin

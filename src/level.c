@@ -13,6 +13,7 @@
 #include "draw.h"
 #include "parserexpressao.h"
 #include "map.h"
+#include "lex.h"
 
 #define CACHE_MAX 2200
 
@@ -75,6 +76,9 @@ int mapDirX,mapDirY; //direção da animação
 float weightRegular,weightThin,weightThick; //grossuras para desenhar linhas
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
 
+// mantenho a variavel 'lextemp' alocada diretamente no código ( um array )
+unsigned *char lextemp[2048];
+
 int getTile(int *t,int x,int y) {
 	return t[x+y*mapWidth];
 }
@@ -88,8 +92,17 @@ void calculatePoints(bool reset) {
 	double p = 0;
 	double resultado = 0;
 	int flag = 0,errorCode = 10;
+	
+	/* teste da nova coisa */
+	memset(lextemp, '\0', 2048];
+    memcpy(lextemp, expr, strlen(input.text));
+    analiselexica(lextemp, 0);
+    memset(lextemp, '\0', 2048);
+    processaexpressao(lextemp, 0);
+	/* fim da nova area de teste! */
+	
 	setavariavel("x",&p);
-	errorCode = calcula(input.text,&resultado,&flag);
+	errorCode = calcula(lextemp,&resultado,&flag);
 	if (errorCode != E_OK) {
 		functionPlot = false;
 		errorMsgShow = 1;
@@ -112,10 +125,12 @@ void calculatePoints(bool reset) {
 		cacheCount = 0;
 		for (p = functionStart; cacheCount < CACHE_MAX && p <= functionEnd; cacheCount++,p += functionGap) {
 			setavariavel("x",&p);
-			errorCode = calcula(input.text,&resultado,&flag);
+			errorCode = calcula(lextemp,&resultado,&flag);
 			functionCache[cacheCount] = resultado;
 		}
 	}
+	
+	free(tmp);
 }
 
 double getValueOnCache(double x) {

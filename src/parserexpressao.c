@@ -454,18 +454,9 @@ int calcula(char *expr, double *resultado, int *flag)
 {
     if (setjmp(jb))
         return ERRO;
-
-    // TODO
-    unsigned char *tmp = calloc(sizeof(unsigned char), 2048);
-    memcpy(tmp, expr, strlen(expr));
-
-    analiselexica(tmp, 0);
-    memset(tmp, '\0', 2048);
-    processaexpressao(tmp, 0);
-
-	printf("Função processada: %s\n", tmp);
-    expressao = tmp;
-    ERANC = tmp;
+		
+    expressao = expr;
+    ERANC = expr;
     _strlwr(expressao);
     *resultado = 0;
     parse();
