@@ -76,8 +76,8 @@ int mapDirX,mapDirY; //direção da animação
 float weightRegular,weightThin,weightThick; //grossuras para desenhar linhas
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
 
-// mantenho a variavel 'lextemp' alocada diretamente no código ( um array )
-unsigned *char lextemp[2048];
+//mantenho a variável 'lextemp' alocada diretamente no código (um array)
+unsigned char lextemp[2048];
 
 int getTile(int *t,int x,int y) {
 	return t[x+y*mapWidth];
@@ -94,11 +94,11 @@ void calculatePoints(bool reset) {
 	int flag = 0,errorCode = 10;
 	
 	/* teste da nova coisa */
-	memset(lextemp, '\0', 2048];
-    memcpy(lextemp, expr, strlen(input.text));
-    analiselexica(lextemp, 0);
-    memset(lextemp, '\0', 2048);
-    processaexpressao(lextemp, 0);
+	memset(lextemp,'\0',2048);
+	memcpy(lextemp,input.text,strlen(input.text));
+	analiselexica(lextemp,0);
+	memset(lextemp,'\0',2048);
+	processaexpressao(lextemp,0);
 	/* fim da nova area de teste! */
 	
 	setavariavel("x",&p);
@@ -129,8 +129,6 @@ void calculatePoints(bool reset) {
 			functionCache[cacheCount] = resultado;
 		}
 	}
-	
-	free(tmp);
 }
 
 double getValueOnCache(double x) {
@@ -200,18 +198,22 @@ void setBase(TBase *base) {
 
 void closeTextbox() {
 	input.captureText = false;
+	playerSequence = 0;
 }
 
 void stopMoving() {
 	respawnTempo = 1;
 	moving = false;
 	dead = false;
+	playerSequence = 0;
 }
 
 void startMoving() {
 	if (input.captureText) closeTextbox();
 	moving = true;
 	respawnTempo = 0;
+	playerSequence = 2;
+	playerFrame = 0;
 }
 
 void openTextbox() {
@@ -229,6 +231,7 @@ void openTextbox() {
 	if (textboxSizeTempo == 0) {
 		textboxPosTempo = textboxPos;
 	}
+	playerSequence = 1;
 }
 
 void startCircuit(TWire *w,int d) {
@@ -380,7 +383,51 @@ void drawTileset(int* tileset,float ox,float oy,float mx,float Mx,float my,float
 	}
 }
 
-void drawMap(TMap *map,float ox,float oy,bool drawPlayer) {
+void drawPlayer(float ox,float oy) {
+	if (wireTempo == 1) {
+		al_draw_filled_circle(px(ox+playerSpriteX*scaleX),py(oy+playerSpriteY*scaleY),weightThick*1.5f,al_map_rgb(0,255,0));
+	} else if (!(respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)&1)) {
+		int cx,cy; //número de frames na imagem, na horizontal e na vertical
+		int cf; //número de frames a serem loopados
+		int cv; //velocidade da animação, em fps
+		ALLEGRO_BITMAP *bm;
+		switch (playerSequence) {
+			case 0: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerIdle; break;
+			case 1: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerWatch; break;
+			case 2: cx = 15; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerTravel; break;
+			default: bm = NULL;
+		}
+		if (bm != NULL) {
+			playerFrame += game.delta*cv;
+			while (playerFrame >= cx*cy) {
+				playerFrame -= cf;
+			}
+			double sx = scaleY*2;
+			double sy = sx;
+			if (wireTempo > 0) {
+				if (fabs(playerX-playerSpriteX) > fabs(playerY-playerSpriteY)) {
+					sy *= (1-easeIn(easeIn(wireTempo))*.9);
+				} else {
+					sx *= (1-easeIn(easeIn(wireTempo))*.9);
+				}
+			}
+			drawSpriteSheet(bm,playerSpriteX*scaleX,playerSpriteY*scaleY,sx,sy,cx,cy,(int)playerFrame,0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
+			if (debugCollision && wireTempo == 0) {
+				al_draw_rectangle(
+					px(ox+(playerSpriteX-playerRadius)*scaleX),py(oy+(playerSpriteY-playerRadius)*scaleY),
+					px(ox+(playerSpriteX+playerRadius)*scaleX),py(oy+(playerSpriteY+playerRadius)*scaleY),
+					al_map_rgb(255,51,0),weightRegular
+				);
+				if (moving && !dead) {
+					int x,y;
+					collide(playerY-playerPrevY,&x,&y,true);
+				}
+			}
+		}
+	}
+}
+
+void drawMap(TMap *map,float ox,float oy,bool p) {
 	al_draw_filled_rectangle(px(ox),py(oy),px(ox+1),py(oy+1),al_map_rgb(0,0,0));
 	float mx,Mx,my,My,pmx,pMx,pmy,pMy;
 	if (ox > 0) {
@@ -410,14 +457,6 @@ void drawMap(TMap *map,float ox,float oy,bool drawPlayer) {
 	
 	//desenha o tileset do parallax
 	drawTileset(map->parallax,ox*parallaxIntensity,oy*parallaxIntensity,pmx,pMx,pmy,pMy);
-	/*
-	drawTileset(
-		map->parallax,
-		ox*parallaxIntensity+(playerSpriteX-mapWidth/2)/(mapWidth*mapWidth),
-		oy*parallaxIntensity+(playerSpriteY-mapHeight/2)/(mapHeight*mapHeight),
-		mx,Mx,my,My
-	);
-	*/
 	
 	//desenha o tilemap de trás
 	drawTileset(map->back,ox,oy,mx,Mx,my,My);
@@ -441,40 +480,7 @@ void drawMap(TMap *map,float ox,float oy,bool drawPlayer) {
 	}
 	
 	//desenha o guri
-	if (!drawPlayer) {
-	} else if (wireTempo == 1) {
-		al_draw_filled_circle(px(ox+playerSpriteX*scaleX),py(oy+playerSpriteY*scaleY),weightThick*1.5f,al_map_rgb(0,255,0));
-	} else if (!(respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)&1)) {
-		int cx,cy;
-		ALLEGRO_BITMAP *bm;
-		switch (playerSequence) {
-			case 0: cx = 5; cy = 4; bm = data.bitmap_playerIdle; break;
-			default: bm = NULL;
-		}
-		if (bm != NULL) {
-			double sx = scaleY*2;
-			double sy = sx;
-			if (wireTempo > 0) {
-				if (fabs(playerX-playerSpriteX) > fabs(playerY-playerSpriteY)) {
-					sy *= (1-easeIn(easeIn(wireTempo))*.9);
-				} else {
-					sx *= (1-easeIn(easeIn(wireTempo))*.9);
-				}
-			}
-			drawSpriteSheet(bm,playerSpriteX*scaleX,playerSpriteY*scaleY,sx,sy,cx,cy,(int)playerFrame,0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
-			if (debugCollision && wireTempo == 0) {
-				al_draw_rectangle(
-					px(ox+(playerSpriteX-playerRadius)*scaleX),py(oy+(playerSpriteY-playerRadius)*scaleY),
-					px(ox+(playerSpriteX+playerRadius)*scaleX),py(oy+(playerSpriteY+playerRadius)*scaleY),
-					al_map_rgb(255,51,0),weightRegular
-				);
-				if (moving && !dead) {
-					int x,y;
-					collide(playerY-playerPrevY,&x,&y,true);
-				}
-			}
-		}
-	}
+	if (p) drawPlayer(ox,oy);
 }
 
 //
@@ -517,7 +523,6 @@ bool level_start() {
 	TBase *base = &currentMap->bases[mapStartBase];
 	if (base == NULL) return false;
 	setBase(base);
-	calculatePoints(true);
 	
 	playerSequence = 0;
 	playerFrame = 0;
@@ -544,17 +549,23 @@ bool level_start() {
 	input.caretPos = 0;
 	input.selectionStart = -1;
 	
+	calculatePoints(true);
+	
 	return true;
 }
 
 bool level_load() {
 	LOADBITMAP(data.bitmap_playerIdle,playerIdle.png);
+	LOADBITMAP(data.bitmap_playerWatch,playerWatch.png);
+	LOADBITMAP(data.bitmap_playerTravel,playerTravel.png);
 	LOADBITMAP(data.bitmap_tileset,tileset.png);
 	return true;
 }
 
 void level_unload() {
 	UNLOADBITMAP(data.bitmap_playerIdle);
+	UNLOADBITMAP(data.bitmap_playerWatch);
+	UNLOADBITMAP(data.bitmap_playerTravel);
 	UNLOADBITMAP(data.bitmap_tileset);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
@@ -667,14 +678,14 @@ void level_update() {
 		}
 	}
 	
-	//animação do jogador
+	//animação do movimento do jogador
 	if (respawnTempo > 0) {
 		respawnTempo -= game.delta;
 		if (respawnTempo < 0) respawnTempo = 0;
 	}
 	if (moving) {
 		if (baseTempo < 1) {
-			baseTempo += game.delta*4;
+			baseTempo += game.delta*1.5;
 			if (baseTempo > 1) baseTempo = 1;
 		}
 	} else {
@@ -682,10 +693,6 @@ void level_update() {
 			baseTempo -= game.delta*1.5;
 			if (baseTempo < 0) baseTempo = 0;
 		}
-	}
-	playerFrame += game.delta*20;
-	while (playerFrame >= 20) {
-		playerFrame -= 20;
 	}
 	
 	//movimentação principal (jogador, circuitos, tela)
