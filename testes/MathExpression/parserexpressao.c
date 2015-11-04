@@ -88,8 +88,8 @@ FUNCAO funcoes[] =
     { "acos",    1,    acos },
     { "atan",    1,    atan },
     { "exp",     1,    exp },
-    { "ln",      1,    log },
-    { "log",     1,    log10 },
+    { "ln",      1,    ln_p },
+    { "log",     1,    log_p },
     { "sqrt",    1,    sqrt_p },
     { "sqr",     1,    sqrt_p },
     { "floor",   1,    floor },
@@ -454,18 +454,9 @@ int calcula(char *expr, double *resultado, int *flag)
 {
     if (setjmp(jb))
         return ERRO;
-
-    // TODO
-    unsigned char *tmp = calloc(sizeof(unsigned char), 2048);
-    memcpy(tmp, expr, strlen(expr));
-
-    analiselexica(tmp, 0);
-    memset(tmp, '\0', 2048);
-    processaexpressao(tmp, 0);
-
-	printf("Função processada: %s\n", tmp);
-    expressao = tmp;
-    ERANC = tmp;
+		
+    expressao = expr;
+    ERANC = expr;
     _strlwr(expressao);
     *resultado = 0;
     parse();

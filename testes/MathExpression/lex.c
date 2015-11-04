@@ -153,6 +153,19 @@ int processaexpressao(unsigned char *expr, int i)
 			else
 				expt = concat(expt, token[i]);
 		}
+		
+		else if (isdigit(ante[0]) && token[i][0] == '(')
+		{
+			// coloquei a função aqui dentro para que ele nao entre no FOR
+			// da função funcaoExiste, toda vez que passar pelo if aqui de cima!
+			if (!funcaoExiste(token[i - 1]))
+			{
+				expt = concat(expt, "*");
+				expt = concat(expt, token[i]);
+			}
+			else
+				expt = concat(expt, token[i]);
+		}
 
 		else if (isdigit(token[i][0]) && isalpha(ante[0]))
 		{
