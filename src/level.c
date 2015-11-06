@@ -31,6 +31,7 @@ int mapX,mapY; //índice do mapa atual na grade de mapas
 TBase *currentBase; //base na qual o jogador se encontra atualmente
 
 double functionCache[CACHE_MAX]; //cache
+bool functionCachePlot[CACHE_MAX]; //cache de erro
 double functionCachePrev[CACHE_MAX]; //cache anterior, para usar na animação
 int cacheCount; //tamanho do cache
 int functionDir; //direção da função, 1 se x cresce, -1 se x decresce
@@ -126,38 +127,45 @@ void calculatePoints(bool reset) {
 		for (p = functionStart; cacheCount < CACHE_MAX && p <= functionEnd; cacheCount++,p += functionGap) {
 			setavariavel("x",&p);
 			errorCode = calcula(lextemp,&resultado,&flag);
+			functionCachePlot[cacheCount] = errorCode == E_OK;
 			functionCache[cacheCount] = resultado;
 		}
 	}
 }
 
-double getValueOnCache(double x) {
+double getValueOnCache(double x,bool *plot) {
 	double ind = (x-functionStart)/functionGap;
 	int l = floor(ind);
 	if (l >= cacheCount-1) {
+		*plot = functionCachePlot[cacheCount-1];
 		return functionCache[cacheCount-1];
 	}
 	int h = ceil(ind);
 	if (h <= 0) {
+		*plot = functionCachePlot[0];
 		return functionCache[0];
 	}
+	*plot = functionCachePlot[l] && functionCachePlot[h];
 	return dlerp(functionCache[l],functionCache[h],fmod(ind,1));
 }
 
-double getValueOnCacheLerp(double x,float t) {
+double getValueOnCacheLerp(double x,float t,bool *plot) {
 	if (t <= 0) {
-		return getValueOnCache(x);
+		return getValueOnCache(x,plot);
 	}
 	double ind = (x-functionStart)/functionGap;
 	int l = floor(ind);
 	if (l >= cacheCount-1) {
+		*plot = functionCachePlot[cacheCount-1];
 		return dlerp(functionCache[cacheCount-1],functionCachePrev[cacheCount-1],t);
 	}
 	int h = ceil(ind);
 	if (h <= 0) {
+		*plot = functionCachePlot[0];
 		return dlerp(functionCache[0],functionCachePrev[0],t);
 	}
 	ind = fmod(ind,1);
+	*plot = functionCachePlot[l] && functionCachePlot[h];
 	return dlerp(
 		dlerp(functionCache[l],functionCache[h],ind),
 		dlerp(functionCachePrev[l],functionCachePrev[h],ind),
@@ -198,21 +206,19 @@ void setBase(TBase *base) {
 
 void closeTextbox() {
 	input.captureText = false;
-	playerSequence = 0;
 }
 
 void stopMoving() {
 	respawnTempo = 1;
 	moving = false;
 	dead = false;
-	playerSequence = 0;
+	playerFrame = 0;
 }
 
 void startMoving() {
 	if (input.captureText) closeTextbox();
 	moving = true;
 	respawnTempo = 0;
-	playerSequence = 2;
 	playerFrame = 0;
 }
 
@@ -231,7 +237,6 @@ void openTextbox() {
 	if (textboxSizeTempo == 0) {
 		textboxPosTempo = textboxPos;
 	}
-	playerSequence = 1;
 }
 
 void startCircuit(TWire *w,int d) {
@@ -251,6 +256,7 @@ void startCircuit(TWire *w,int d) {
 		playerX = wireNow->nodes[wireNow->n-1].x;
 		playerY = wireNow->nodes[wireNow->n-1].y;
 	}
+	playerFrame = 5;
 }
 
 void moveMap(int x,int y) {
@@ -384,31 +390,63 @@ void drawTileset(int* tileset,float ox,float oy,float mx,float Mx,float my,float
 }
 
 void drawPlayer(float ox,float oy) {
+	/*
 	if (wireTempo == 1) {
 		al_draw_filled_circle(px(ox+playerSpriteX*scaleX),py(oy+playerSpriteY*scaleY),weightThick*1.5f,al_map_rgb(0,255,0));
-	} else if (!(respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)&1)) {
+		return;
+	}
+	*/
+	if (!(respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)&1)) {
 		int cx,cy; //número de frames na imagem, na horizontal e na vertical
 		int cf; //número de frames a serem loopados
 		int cv; //velocidade da animação, em fps
+		bool c = true; //se ele irá acrescentar o contador de frames
 		ALLEGRO_BITMAP *bm;
+		if (moving) {
+			playerSequence = 2;
+		} else if (input.captureText) {
+			playerSequence = 1;
+		} else if (wireTempo > 0) {
+			playerSequence = 3;
+			if (wireTempo < 1) {
+				c = false;
+				playerFrame = easeIn(wireTempo)*5;
+			}
+		} else if (baseTempo > .667) {
+			playerSequence = 2;
+			c = false;
+			playerFrame = (baseTempo-.667)*15;
+		} else {
+			playerSequence = 0;
+		}
 		switch (playerSequence) {
 			case 0: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerIdle; break;
 			case 1: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerWatch; break;
 			case 2: cx = 15; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerTravel; break;
+			case 3: cx = 15; cy = 1; cf = 10; cv = 40; bm = data.bitmap_playerBall; break;
 			default: bm = NULL;
 		}
 		if (bm != NULL) {
-			playerFrame += game.delta*cv;
-			while (playerFrame >= cx*cy) {
-				playerFrame -= cf;
+			if (c) {
+				playerFrame += game.delta*cv;
+				while (playerFrame >= cx*cy) {
+					playerFrame -= cf;
+				}
 			}
 			double sx = scaleY*2;
 			double sy = sx;
 			if (wireTempo > 0) {
-				if (fabs(playerX-playerSpriteX) > fabs(playerY-playerSpriteY)) {
-					sy *= (1-easeIn(easeIn(wireTempo))*.9);
+				if (wireTempo < 1) {
+					if (fabs(playerX-playerSpriteX) > fabs(playerY-playerSpriteY)) {
+						sx *= (1-easeIn(wireTempo)*.25);
+						sy *= (1-ease(ease(wireTempo))*.25);
+					} else {
+						sx *= (1-ease(ease(wireTempo))*.25);
+						sy *= (1-easeIn(wireTempo)*.25);
+					}
 				} else {
-					sx *= (1-easeIn(easeIn(wireTempo))*.9);
+					sx *= .75;
+					sy *= .75;
 				}
 			}
 			drawSpriteSheet(bm,playerSpriteX*scaleX,playerSpriteY*scaleY,sx,sy,cx,cy,(int)playerFrame,0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
@@ -558,6 +596,7 @@ bool level_load() {
 	LOADBITMAP(data.bitmap_playerIdle,playerIdle.png);
 	LOADBITMAP(data.bitmap_playerWatch,playerWatch.png);
 	LOADBITMAP(data.bitmap_playerTravel,playerTravel.png);
+	LOADBITMAP(data.bitmap_playerBall,playerBall.png);
 	LOADBITMAP(data.bitmap_tileset,tileset.png);
 	return true;
 }
@@ -566,6 +605,7 @@ void level_unload() {
 	UNLOADBITMAP(data.bitmap_playerIdle);
 	UNLOADBITMAP(data.bitmap_playerWatch);
 	UNLOADBITMAP(data.bitmap_playerTravel);
+	UNLOADBITMAP(data.bitmap_playerBall);
 	UNLOADBITMAP(data.bitmap_tileset);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
@@ -614,8 +654,10 @@ void level_update() {
 					} else if (input.down->press) {
 						startCircuit(currentBase->wireDown,currentBase->wireDownDir);
 					} else if (input.left->press) {
+						setDir(-1);
 						startCircuit(currentBase->wireLeft,currentBase->wireLeftDir);
 					} else if (input.right->press) {
+						setDir(1);
 						startCircuit(currentBase->wireRight,currentBase->wireRightDir);
 					}
 				}
@@ -705,7 +747,7 @@ void level_update() {
 			if (wireTempo > 1) wireTempo = 1;
 		}
 		if (wireTempo == 1) {
-			wireProgress += game.delta*16;
+			wireProgress += game.delta*13;
 			while (1) {
 				if (wireProgress >= wireLength) {
 					wireProgress -= wireLength;
@@ -723,6 +765,9 @@ void level_update() {
 							wire = false;
 							break;
 						}
+					}
+					if ((wireNow->nodes[wireIndex].x-wireNow->nodes[wireIndex+1].x)*functionDir*wireDir > 0) {
+						setDir(-functionDir);
 					}
 					wireLength = getWireLength(wireNow,wireIndex);
 					continue;
@@ -801,25 +846,32 @@ void level_update() {
 			}
 			playerX += game.delta*3*baseTempo*dottedAcc*acc;
 			playerPrevY = playerY;
-			playerY = zeroHeight-getValueOnCache(playerX-(currentBase->x))+(currentBase->y);
-			playerSpriteX = lerp(playerSpriteX,playerX,baseTempo);
-			playerSpriteY = lerp(playerSpriteY,playerY,baseTempo);
-			int x,y;
-			int collision = collide((playerY-playerPrevY),&x,&y,false);
-			if (collision == 1) {
-				if (fabs(playerSpriteY-y) >= 2) {
-					playerSpriteY = y;
-				}
-				if (playerSpriteY < 0) playerSpriteY = 0;
-				if (playerSpriteY > 16) playerSpriteY = 16;
+			bool p;
+			float ny = getValueOnCache(playerX-(currentBase->x),&p);
+			if (!p) {
 				dead = true;
 				respawnTempo = 2.5;
-			} else if (collision == 2) {
-				setBase(getBase(x,y));
-				stopMoving();
-				calculatePoints(true);
-				baseTempo = 1;
-				respawnTempo = 0;
+			} else {
+				playerY = zeroHeight-ny+(currentBase->y);
+				playerSpriteX = lerp(playerSpriteX,playerX,baseTempo);
+				playerSpriteY = lerp(playerSpriteY,playerY,baseTempo);
+				int x,y;
+				int collision = collide((playerY-playerPrevY),&x,&y,false);
+				if (collision == 1) {
+					if (fabs(playerSpriteY-y) >= 2) {
+						playerSpriteY = y;
+					}
+					if (playerSpriteY < 0) playerSpriteY = 0;
+					if (playerSpriteY > 16) playerSpriteY = 16;
+					dead = true;
+					respawnTempo = 2.5;
+				} else if (collision == 2) {
+					setBase(getBase(x,y));
+					stopMoving();
+					calculatePoints(true);
+					baseTempo = 1;
+					respawnTempo = 0;
+				}
 			}
 		}
 		if (dead) {
@@ -966,13 +1018,17 @@ void level_draw() {
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
 		float w = easeOut(weightTempo);
-		ALLEGRO_COLOR plotColor = al_map_rgba(255,255,255,(int)lerp(153,255,textboxSizeTempo));
+		double y0,y1;
+		bool p0,p1;
+		ALLEGRO_COLOR plotColor = al_map_rgba(255,255,255,(int)lerp(102,255,textboxSizeTempo));
 		w = ceil(w*weightRegular);
 		BLENDALPHA();
 		for (double x = functionStart+dottedTempo*.25; x < functionEnd; x += .25) {
-			al_draw_line(
-				dx(offsetX+x*scaleX),dy(offsetY-getValueOnCacheLerp(x,t)*scaleY),
-				dx(offsetX+(x-.125)*scaleX),dy(offsetY-getValueOnCacheLerp(x-.125,t)*scaleY),
+			y0 = getValueOnCacheLerp(x,t,&p0);
+			y1 = getValueOnCacheLerp(x-.125,t,&p1);
+			if (p0 && p1) al_draw_line(
+				dx(offsetX+x*scaleX),dy(offsetY-y0*scaleY),
+				dx(offsetX+(x-.125)*scaleX),dy(offsetY-y1*scaleY),
 				plotColor,w
 			);
 		}
