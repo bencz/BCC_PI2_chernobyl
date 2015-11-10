@@ -15,6 +15,7 @@
 #define E_RAIZNEG      10     // Erro de raiz negativa
 #define E_LOGINV	   11     // Erro para log menor ou igual à zero
 #define E_LNINV        12     // Erro para ln menor ou igual à zero
+#define E_NAN          13     // Not a Number	
 
 static const char* mensagensDeErro[] =
 {
@@ -29,7 +30,8 @@ static const char* mensagensDeErro[] =
    "Expressao vazia",
    "x não pode ser negativo para raiz quadrada",
    "x não pode ser menor ou igual à 0 para log10",
-   "x não pode ser menor ou igual à 0 para ln"
+   "x não pode ser menor ou igual à 0 para ln",
+   "Nan"
 };
 
 int setavariavel(char *nome, double *valor);

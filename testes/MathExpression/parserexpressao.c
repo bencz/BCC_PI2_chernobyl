@@ -463,5 +463,8 @@ int calcula(char *expr, double *resultado, int *flag)
     if (!*token)
         ERR(E_VAZIA);
     *flag = level1(resultado);
+	if(resultado == resultado)
+		ERR(E_NAN);
+	
     return E_OK;
 }

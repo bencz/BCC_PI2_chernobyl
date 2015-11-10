@@ -1,13 +1,17 @@
 #if defined(_MSC_VER)
+#define _STRDUP_ _strdup
 #if !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+#else
+#define _STRDUP_ strdup
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <malloc.h>
 #include "lex.h"
 
 #define LINESIZE        2048
@@ -79,7 +83,7 @@ void analiselexica(unsigned char *linebuffer, int printLexemas)
 		memcpy(buf, pBgn, lenToken);
 		buf[lenToken] = '\0';
 
-		token[nToken++] = _strdup(buf);
+		token[nToken++] = _STRDUP_(buf);
 		if (printLexemas == 1)
 			printf("[%3d]: %s\n", nToken, buf);
 	}
@@ -133,7 +137,7 @@ int funcaoExiste(char *func)
 
 int processaexpressao(unsigned char *expr, int i)
 {
-	const int tamAnte = 128;
+	const int tamAnte = 1024;
 	unsigned char *expt = calloc(sizeof(unsigned char), LINESIZE);
 	unsigned char *ante = calloc(sizeof(unsigned char), tamAnte);
 	memset(expt, '\0', LINESIZE);
@@ -217,5 +221,6 @@ int processaexpressao(unsigned char *expr, int i)
 	memcpy(expr, expt, strlen(expt));
 	free(expt);
 	free(ante);
+	memset(token, '\0', NTOKEN);
 	return i;
 }
