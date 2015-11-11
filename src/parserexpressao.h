@@ -19,19 +19,19 @@
 
 static const char* mensagensDeErro[] =
 {
-   "Erro se sintaxe",
-   "Falta parentese",
-   "Divisao por zero",
-   "Variavel desconhecida",
-   "Numero maximo de variaveis excedido",
-   "Funcao nao reconhecida",
-   "Numero incorreto de argumentos para a funcao",
-   "Esta faltando argumentos",
-   "Expressao vazia",
+   "Erro de sintaxe",
+   "Falta parêntese",
+   "Divisão por zero",
+   "Variável desconhecida",
+   "Número máximo de variáveis excedido",
+   "Função não reconhecida",
+   "Número incorreto de argumentos para a função",
+   "Está faltando argumentos",
+   "Expressão vazia",
    "x não pode ser negativo para raiz quadrada",
-   "x não pode ser menor ou igual à 0 para log10",
-   "x não pode ser menor ou igual à 0 para ln",
-   "Nan"
+   "x não pode ser menor ou igual a 0 para log10",
+   "x não pode ser menor ou igual a 0 para ln",
+   "Erro no resultado"
 };
 
 int setavariavel(char *nome, double *valor);

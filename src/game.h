@@ -57,6 +57,7 @@ struct Data {
 	ALLEGRO_BITMAP *bitmap_playerWatch;
 	ALLEGRO_BITMAP *bitmap_playerTravel;
 	ALLEGRO_BITMAP *bitmap_playerBall;
+	ALLEGRO_BITMAP *bitmap_playerDying;
 	ALLEGRO_BITMAP *bitmap_tileset;
 	
 } data;

@@ -22,8 +22,6 @@ const bool debugCollision = false; //se for true, mostra hitbox e destaca tiles 
 const double scaleX = 1.0/mapWidth; //inversa da largura do mapa, para usar como porcentagem
 const double scaleY = 1.0/mapHeight; //igual, mas da altura
 const float parallaxIntensity = 2.0/3.0; //intensidade do movimento do parallax. 1 ele move normal, 0 ele n move
-const int tilemapWidth = 5; //largura do tilemap.png, em tiles
-const int tilemapHeight = 1; //altura do tilemap.png, em tiles
 
 TMap *currentMap; //mapa da fase atual
 TMap *prevMap; //mapa da fase anterior, para ser mostrado na transição entre duas telas
@@ -131,6 +129,7 @@ void calculatePoints(bool reset) {
 			functionCache[cacheCount] = resultado;
 		}
 	}
+	free(lextemp);
 }
 
 double getValueOnCache(double x,bool *plot) {
@@ -402,7 +401,9 @@ void drawPlayer(float ox,float oy) {
 		int cv; //velocidade da animação, em fps
 		bool c = true; //se ele irá acrescentar o contador de frames
 		ALLEGRO_BITMAP *bm;
-		if (moving) {
+		if (respawnTempo > 1) {
+			playerSequence = 4;
+		} else if (moving && respawnTempo == 0) {
 			playerSequence = 2;
 		} else if (input.captureText) {
 			playerSequence = 1;
@@ -412,7 +413,7 @@ void drawPlayer(float ox,float oy) {
 				c = false;
 				playerFrame = easeIn(wireTempo)*5;
 			}
-		} else if (baseTempo > .667) {
+		} else if (baseTempo > .667 && respawnTempo == 0) {
 			playerSequence = 2;
 			c = false;
 			playerFrame = (baseTempo-.667)*15;
@@ -424,12 +425,13 @@ void drawPlayer(float ox,float oy) {
 			case 1: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerWatch; break;
 			case 2: cx = 15; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerTravel; break;
 			case 3: cx = 15; cy = 1; cf = 10; cv = 40; bm = data.bitmap_playerBall; break;
+			case 4: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerDying; break;
 			default: bm = NULL;
 		}
 		if (bm != NULL) {
 			if (c) {
 				playerFrame += game.delta*cv;
-				while (playerFrame >= cx*cy) {
+				while ((int)playerFrame >= cx*cy) {
 					playerFrame -= cf;
 				}
 			}
@@ -449,7 +451,7 @@ void drawPlayer(float ox,float oy) {
 					sy *= .75;
 				}
 			}
-			drawSpriteSheet(bm,playerSpriteX*scaleX,playerSpriteY*scaleY,sx,sy,cx,cy,(int)playerFrame,0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
+			drawSpriteSheet(bm,playerSpriteX*scaleX,playerSpriteY*scaleY,sx,sy,cx,cy,((int)playerFrame)%(cx*cy),0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
 			if (debugCollision && wireTempo == 0) {
 				al_draw_rectangle(
 					px(ox+(playerSpriteX-playerRadius)*scaleX),py(oy+(playerSpriteY-playerRadius)*scaleY),
@@ -507,10 +509,10 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 			al_draw_line(
 				px(ox+(i->x)*scaleX),py(oy+(i->y)*scaleY),
 				px(ox+(j->x)*scaleX),py(oy+(j->y)*scaleY),
-				al_map_rgb(0,153,0),weightThick
+				al_map_rgb(0,204,0),weightThick
 			);
 			if (b > 1) {
-				al_draw_filled_circle(px(ox+(i->x)*scaleX),py(oy+(i->y)*scaleY),weightThick*.5f,al_map_rgb(0,153,0));
+				al_draw_filled_circle(px(ox+(i->x)*scaleX),py(oy+(i->y)*scaleY),weightThick*.5f,al_map_rgb(0,204,0));
 			}
 			i++;
 			j++;
@@ -597,6 +599,7 @@ bool level_load() {
 	LOADBITMAP(data.bitmap_playerWatch,playerWatch.png);
 	LOADBITMAP(data.bitmap_playerTravel,playerTravel.png);
 	LOADBITMAP(data.bitmap_playerBall,playerBall.png);
+	LOADBITMAP(data.bitmap_playerDying,playerDying.png);
 	LOADBITMAP(data.bitmap_tileset,tileset.png);
 	return true;
 }
@@ -606,6 +609,7 @@ void level_unload() {
 	UNLOADBITMAP(data.bitmap_playerWatch);
 	UNLOADBITMAP(data.bitmap_playerTravel);
 	UNLOADBITMAP(data.bitmap_playerBall);
+	UNLOADBITMAP(data.bitmap_playerDying);
 	UNLOADBITMAP(data.bitmap_tileset);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
@@ -640,6 +644,7 @@ void level_update() {
 		} else {
 			if (input.captureFinish) {
 				closeTextbox();
+				//calculatePoints(false);
 			}
 			if (input.textUpdate) {
 				calculatePoints(false);
@@ -1080,6 +1085,9 @@ void level_draw() {
 	}
 	
 	//footer
+	BLENDALPHA();
+	al_draw_filled_rectangle(px(0),py(scaleY*17),px(1),py(1),al_map_rgba(255,255,255,128));
+	BLENDDEFAULT();
 	float footerHeight = .825f;
 	if (errorMsgShow) {
 		al_draw_filled_triangle(

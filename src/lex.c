@@ -15,8 +15,8 @@
 #include "lex.h"
 
 #define LINESIZE        2048
-#define NTOKEN          100000
-#define MAXLINES        10000
+#define NTOKEN          1000
+#define MAXLINES        1000
 
 char *token[NTOKEN];
 int   nToken;
@@ -29,6 +29,7 @@ void analiselexica(unsigned char *linebuffer, int printLexemas)
 	nToken = 0;
 	char buf[LINESIZE + 1], *p, *pBgn;
 	int  lenToken;
+	memset(token, '\0', 2048);
 
 	p = linebuffer;
 	while (*p != '\0')
@@ -53,9 +54,9 @@ void analiselexica(unsigned char *linebuffer, int printLexemas)
 		}
 		else if (isdigit(*p))
 		{
-			if (*p == '0' && (p[1] == 'x' || p[1] == 'X'))
-				strtol(p, &p, 16);
-			else
+			//if (*p == '0' && (p[1] == 'x' || p[1] == 'X'))
+			//	strtol(p, &p, 16);
+			//else
 				strtod(p, &p);
 		}
 		else if (*p == '\"' || *p == '\'')
@@ -221,6 +222,7 @@ int processaexpressao(unsigned char *expr, int i)
 	memcpy(expr, expt, strlen(expt));
 	free(expt);
 	free(ante);
-	memset(token, '\0', NTOKEN);
+	free(token);
+	//memset(token, '\0', NTOKEN);
 	return i;
 }

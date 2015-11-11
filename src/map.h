@@ -7,15 +7,17 @@
 
 //aqui a lista de mapas a serem carregados
 static const char *mapList[] = {
-	"data/levels/test.tmx",
-	"data/levels/test2.tmx",
+	"data/levels/cen00.tmx",
+	"data/levels/cen01.tmx",
+	"data/levels/cen02.tmx",
+	"data/levels/cen03.tmx",
 };
 
 //e aqui a ordem na qual eles são carregados
 //o número indicando o índice dele no array de cima
-static const int mapGridWidth = 2;
+static const int mapGridWidth = 4;
 static const int mapGrid[] = {
-	0,1
+	0,1,2,3
 };
 
 //aqui indica-se o mapa a ser lido de primeira, na grade acima
@@ -24,6 +26,9 @@ static const int mapStartY = 0;
 
 //e aqui indica-se o índice da base na qual o jogador se encontrará
 static const int mapStartBase = 0;
+
+static const int tilemapWidth = 32; //largura do tilemap.png, em tiles
+static const int tilemapHeight = 79; //altura do tilemap.png, em tiles
 
 typedef struct {
 	int x,y;

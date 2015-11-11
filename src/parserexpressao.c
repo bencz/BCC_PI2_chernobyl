@@ -8,6 +8,7 @@
 #include <math.h>
 #include <setjmp.h>
 #include <ctype.h>
+#include <stdint.h>
 #include "parserexpressao.h"
 #include "lex.h"
 
@@ -17,7 +18,7 @@ typedef unsigned int uint;
 typedef unsigned char uchar;
 
 #define TAMVAR          15
-#define MAXVARS         50
+#define MAXVARS         15
 #define TAMTOK          30
 
 #define VAR             1
@@ -450,6 +451,12 @@ char *_strlwr(char *str)
 }
 #endif
 
+int isnan_d(double d)
+{
+    const uint64_t u = *(uint64_t*)&d;
+    return (u&0x7FF0000000000000ULL) == 0x7FF0000000000000ULL && (u&0xFFFFFFFFFFFFFULL);
+}
+
 int calcula(char *expr, double *resultado, int *flag)
 {
     if (setjmp(jb))
@@ -463,8 +470,8 @@ int calcula(char *expr, double *resultado, int *flag)
     if (!*token)
         ERR(E_VAZIA);
     *flag = level1(resultado);
-	if(resultado == resultado)
-		ERR(E_NAN);
+	if(isnan_d(*resultado))
+		return E_NAN;
 	
     return E_OK;
 }
