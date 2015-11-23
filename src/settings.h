@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 
+void startPause(bool ingame);
+bool updatePause(bool ingame);
+void drawPause(bool ingame);
+
 bool settings_load();
 void settings_unload();
 void settings_update();

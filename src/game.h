@@ -41,6 +41,9 @@ struct Game {
 	int width,height; //resolução com letterboxes
 	int offsetx,offsety; //tamanho das letterboxes
 	float fps,delta; //velocidade do timer
+	
+	float volumeBgm; //volume da música de fundo
+	float volumeSfx; //volume dos sons de efeito
 
 } game;
 

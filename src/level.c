@@ -14,6 +14,7 @@
 #include "parserexpressao.h"
 #include "map.h"
 #include "lex.h"
+#include "settings.h"
 
 #define CACHE_MAX 2200
 
@@ -55,6 +56,8 @@ double playerX,playerY,playerPrevY; //posição do jogador
 double playerSpriteX,playerSpriteY; //posição do sprite do jogador
 int playerSequence; //índice da animação do jogador
 float playerFrame; //índice do frame da animação
+
+bool paused; //tá pausado
 
 bool moving; //tá movendo
 bool dead; //tá morrendo
@@ -429,7 +432,7 @@ void drawPlayer(float ox,float oy) {
 			default: bm = NULL;
 		}
 		if (bm != NULL) {
-			if (c) {
+			if (c && !paused) {
 				playerFrame += game.delta*cv;
 				while ((int)playerFrame >= cx*cy) {
 					playerFrame -= cf;
@@ -567,6 +570,8 @@ bool level_start() {
 	playerSequence = 0;
 	playerFrame = 0;
 	
+	paused = false;
+	
 	moving = false;
 	dead = false;
 	wire = false;
@@ -622,11 +627,25 @@ void level_unload() {
 }
 
 void level_update() {
+	//pause
+	if (paused) {
+		if (updatePause(true)) {
+			paused = false;
+		}
+		return;
+	}
+	
 	//keypresses
 	if (scene.tempo <= 0) {
 		if (input.escape->press) {
-			sceneLoad(MENU);
+			closeTextbox();
+			paused = true;
+			startPause(true);
+			return;
 		}
+		//if (input.escape->press) {
+		//	sceneLoad(MENU);
+		//}
 		if (input.tab->press && wireTempo == 0) {
 			setDir(-functionDir);
 		}
@@ -1052,7 +1071,7 @@ void level_draw() {
 			int textboxOffsetY = py(.01+textboxHeight);
 			int selOffset = -1;
 			for (int a = 0; 1; a++) {
-				if (a == input.caretPos && input.caretBlink < .5f) {
+				if (!paused && a == input.caretPos && input.caretBlink < .5f) {
 					al_draw_line(
 						textboxOffsetX,
 						textboxOffsetY,
@@ -1115,5 +1134,10 @@ void level_draw() {
 			data.font_Regular37,al_map_rgb(51,51,51),px(.99),py(.125+footerHeight),ALLEGRO_ALIGN_RIGHT,
 			"espaço: iniciar - tab: inverter x - enter: abrir texto"
 		);
+	}
+	
+	//pause
+	if (paused) {
+		drawPause(true);
 	}
 }

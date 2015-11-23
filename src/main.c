@@ -224,6 +224,10 @@ int main(int argc,char **args) {
 	//timer
 	game.fps = 60;
 	game.delta = 1.0/game.fps;
+	
+	//volume
+	game.volumeBgm = 1;
+	game.volumeSfx = 1;
 
 	//inicia tudo q o allegro precisa pra iniciar
 	if (!al_init()) {
