@@ -21,6 +21,7 @@ double ix(int x); //converte de pixels pra uma porcentagem de acordo com o espaç
 double iy(int y);
 
 void drawBitmap(ALLEGRO_BITMAP *bitmap,double x,double y,double w,double h,int anchorX,int anchorY,int flags);
+void drawBitmapRegion(ALLEGRO_BITMAP *bitmap,double sx,double sy,double sw,double sh,double nx,double ny,double nw,double nh,int anchorX,int anchorY,int flags);
 void drawSpriteSheet(ALLEGRO_BITMAP *bitmap,double x,double y,double w,double h,int sx,int sy,int c,int anchorX,int anchorY,int flags);
 
 #endif

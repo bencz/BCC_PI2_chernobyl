@@ -55,13 +55,15 @@ struct Data {
 	ALLEGRO_FONT *font_Bold67;
 	
 	//bitmaps
-	ALLEGRO_BITMAP *bitmap_test;
 	ALLEGRO_BITMAP *bitmap_playerIdle;
 	ALLEGRO_BITMAP *bitmap_playerWatch;
 	ALLEGRO_BITMAP *bitmap_playerTravel;
 	ALLEGRO_BITMAP *bitmap_playerBall;
 	ALLEGRO_BITMAP *bitmap_playerDying;
 	ALLEGRO_BITMAP *bitmap_tileset;
+	ALLEGRO_BITMAP *bitmap_parallax0;
+	ALLEGRO_BITMAP *bitmap_parallax1;
+	ALLEGRO_BITMAP *bitmap_parallax2;
 	
 } data;
 

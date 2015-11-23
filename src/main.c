@@ -39,12 +39,12 @@ void unloadFonts() {
 }
 
 bool load() {
-	LOADBITMAP(data.bitmap_test,test.png);
+	//
 	return true;
 }
 
 void unload() {
-	UNLOADBITMAP(data.bitmap_test);
+	//
 }
 
 bool start() {

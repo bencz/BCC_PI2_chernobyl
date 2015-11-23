@@ -95,13 +95,11 @@ void calculatePoints(bool reset) {
 	double resultado = 0;
 	int flag = 0,errorCode = 10;
 	
-	/* teste da nova coisa */
 	memset(lextemp,'\0',2048);
 	memcpy(lextemp,input.text,strlen(input.text));
 	analiselexica(lextemp,0);
 	memset(lextemp,'\0',2048);
 	processaexpressao(lextemp,0);
-	/* fim da nova area de teste! */
 	
 	setavariavel("x",&p);
 	errorCode = calcula(lextemp,&resultado,&flag);
@@ -472,34 +470,49 @@ void drawPlayer(float ox,float oy) {
 
 void drawMap(TMap *map,float ox,float oy,bool p) {
 	al_draw_filled_rectangle(px(ox),py(oy),px(ox+1),py(oy+1),al_map_rgb(0,0,0));
-	float mx,Mx,my,My,pmx,pMx,pmy,pMy;
+	float mx,Mx,my,My;
 	if (ox > 0) {
 		mx = ox;
-		pMx = Mx = 1+scaleX;
-		pmx = mx+scaleX*.5f;
+		Mx = 1+scaleX;
 	} else if (ox < 0) {
-		pmx = mx = -scaleX;
+		mx = -scaleX;
 		Mx = 1+ox;
-		pMx = Mx-scaleX*.5f;
 	} else {
-		pmx = mx = -scaleX;
-		pMx = Mx = 1+scaleX;
+		mx = -scaleX;
+		Mx = 1+scaleX;
 	}
 	if (oy > 0) {
 		my = oy;
-		pMy = My = 1+scaleY;
-		pmy = my+scaleY*.5f;
+		My = 1+scaleY;
 	} else if (oy < 0) {
-		pmy = my = -scaleY;
+		my = -scaleY;
 		My = 1+oy;
-		pMy = My-scaleY*.5f;
 	} else {
-		pmy = my = -scaleY;
-		pMy = My = 1+scaleY;
+		my = -scaleY;
+		My = 1+scaleY;
 	}
 	
 	//desenha o tileset do parallax
-	drawTileset(map->parallax,ox*parallaxIntensity,oy*parallaxIntensity,pmx,pMx,pmy,pMy);
+	ALLEGRO_BITMAP *par;
+	switch (map->parallax[0]/576) {
+		case 0: par = data.bitmap_parallax0; break;
+		case 1: par = data.bitmap_parallax1; break;
+		case 2: par = data.bitmap_parallax2; break;
+		default: par = NULL; break;
+	}
+	if (par != NULL) {
+		int w = al_get_bitmap_width(par);
+		int h = al_get_bitmap_height(par);
+		float x0 = clamp(ox,0,1);
+		float x1 = clamp(ox+1,0,1);
+		float y0 = clamp(oy,0,1);
+		float y1 = clamp(oy+1,0,1);
+		drawBitmapRegion(par,
+			lerp(x0,clamp(-ox,0,1),parallaxIntensity),
+			lerp(y0,clamp(-oy,0,1),parallaxIntensity),
+			x1-x0,y1-y0,x0,y0,(x1-x0)*game.idealProp,y1-y0,-1,-1,0
+		);
+	}
 	
 	//desenha o tilemap de trás
 	drawTileset(map->back,ox,oy,mx,Mx,my,My);
@@ -605,7 +618,10 @@ bool level_load() {
 	LOADBITMAP(data.bitmap_playerTravel,playerTravel.png);
 	LOADBITMAP(data.bitmap_playerBall,playerBall.png);
 	LOADBITMAP(data.bitmap_playerDying,playerDying.png);
-	LOADBITMAP(data.bitmap_tileset,tileset.png);
+	LOADBITMAP(data.bitmap_tileset,tilesetHq.png);
+	LOADBITMAP(data.bitmap_parallax0,parallax0.png);
+	LOADBITMAP(data.bitmap_parallax1,parallax1.png);
+	LOADBITMAP(data.bitmap_parallax2,parallax2.png);
 	return true;
 }
 
@@ -616,6 +632,9 @@ void level_unload() {
 	UNLOADBITMAP(data.bitmap_playerBall);
 	UNLOADBITMAP(data.bitmap_playerDying);
 	UNLOADBITMAP(data.bitmap_tileset);
+	UNLOADBITMAP(data.bitmap_parallax0);
+	UNLOADBITMAP(data.bitmap_parallax1);
+	UNLOADBITMAP(data.bitmap_parallax2);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
 		currentMap = NULL;
