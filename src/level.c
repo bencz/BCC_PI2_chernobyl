@@ -19,7 +19,7 @@
 #define CACHE_MAX 2200
 
 const double playerRadius = 2.0/3.0; //metade da largura do jogador
-const bool debugCollision = false; //se for true, mostra hitbox e destaca tiles usadas para colisão
+const bool debugCollision = true; //se for true, mostra hitbox e destaca tiles usadas para colisão
 const double scaleX = 1.0/mapWidth; //inversa da largura do mapa, para usar como porcentagem
 const double scaleY = 1.0/mapHeight; //igual, mas da altura
 const float parallaxIntensity = 2.0/3.0; //intensidade do movimento do parallax. 1 ele move normal, 0 ele n move
