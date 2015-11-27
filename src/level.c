@@ -94,13 +94,13 @@ void calculatePoints(bool reset) {
 	double p = 0;
 	double resultado = 0;
 	int flag = 0,errorCode = 10;
-	
+
 	memset(lextemp,'\0',2048);
 	memcpy(lextemp,input.text,strlen(input.text));
 	analiselexica(lextemp,0);
 	memset(lextemp,'\0',2048);
 	processaexpressao(lextemp,0);
-	
+
 	setavariavel("x",&p);
 	errorCode = calcula(lextemp,&resultado,&flag);
 	if (errorCode != E_OK) {
@@ -130,7 +130,11 @@ void calculatePoints(bool reset) {
 			functionCache[cacheCount] = resultado;
 		}
 	}
-	free(lextemp);
+#if _WIN32
+    free(lextemp);
+#elif __linux__
+    memset(lextemp, '\0', 2048);
+#endif
 }
 
 double getValueOnCache(double x,bool *plot) {
@@ -491,7 +495,7 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 		my = -scaleY;
 		My = 1+scaleY;
 	}
-	
+
 	//desenha o tileset do parallax
 	ALLEGRO_BITMAP *par;
 	switch (map->parallax[0]/576) {
@@ -513,10 +517,10 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 			x1-x0,y1-y0,x0,y0,(x1-x0)*game.idealProp,y1-y0,-1,-1,0
 		);
 	}
-	
+
 	//desenha o tilemap de trás
 	drawTileset(map->back,ox,oy,mx,Mx,my,My);
-	
+
 	//desenha os circuitos
 	for (int a = 0; a < map->wiresN; a++) {
 		int2 *i = map->wires[a].nodes;
@@ -534,7 +538,7 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 			j++;
 		}
 	}
-	
+
 	//desenha o guri
 	if (p) drawPlayer(ox,oy);
 }
@@ -556,18 +560,18 @@ bool level_start() {
 	scene.update = &level_update;
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
-	
+
 	mapX = mapStartX;
 	mapY = mapStartY;
-	
+
 	currentMap = createMap();
 	prevMap = createMap();
 	loadMap(currentMap,mapX,mapY);
-	
+
 	functionDir = 1;
 	functionGap = 1.0/64.0; //menor o valor, maior a precisão
 	functionPlot = false;
-	
+
 	cacheCount = 0;
 	plotTempo = 0;
 	dottedTempo = 0;
@@ -575,40 +579,40 @@ bool level_start() {
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-	
+
 	TBase *base = &currentMap->bases[mapStartBase];
 	if (base == NULL) return false;
 	setBase(base);
-	
+
 	playerSequence = 0;
 	playerFrame = 0;
-	
+
 	paused = false;
-	
+
 	moving = false;
 	dead = false;
 	wire = false;
 	respawnTempo = 1;
 	baseTempo = 0;
-	
+
 	wireTempo = 0;
 	wireNow = NULL;
 	wireIndex = 0;
 	wireProgress = 0;
-	
+
 	textboxPos = 1;
 	textboxPosTempo = 1;
 	textboxSizeTempo = 0;
-	
+
 	stopMoving();
 	closeTextbox();
 	input.text[0] = '\0';
 	input.captureFinish = false;
 	input.caretPos = 0;
 	input.selectionStart = -1;
-	
+
 	calculatePoints(true);
-	
+
 	return true;
 }
 
@@ -653,7 +657,7 @@ void level_update() {
 		}
 		return;
 	}
-	
+
 	//keypresses
 	if (scene.tempo <= 0) {
 		if (input.escape->press) {
@@ -714,7 +718,7 @@ void level_update() {
 			}
 		}
 	}
-	
+
 	//animação do gráfico
 	if (zeroHeightTempo > 0) {
 		zeroHeightTempo -= game.delta*3;
@@ -762,7 +766,7 @@ void level_update() {
 			plotTempo = 0;
 		}
 	}
-	
+
 	//animação do movimento do jogador
 	if (respawnTempo > 0) {
 		respawnTempo -= game.delta;
@@ -779,7 +783,7 @@ void level_update() {
 			if (baseTempo < 0) baseTempo = 0;
 		}
 	}
-	
+
 	//movimentação principal (jogador, circuitos, tela)
 	if (mapTempo > 0) {
 		mapTempo -= game.delta;
@@ -931,7 +935,7 @@ void level_update() {
 			playerSpriteY = lerp(playerY,playerSpriteY,baseTempo);
 		}
 	}
-	
+
 	//textbox
 	if (input.captureText) {
 		if (textboxSizeTempo < 1) {
@@ -978,7 +982,7 @@ void level_draw() {
 	} else {
 		weightThick = round(game.height/120.0);
 	}
-	
+
 	//desenha o mapa
 	if (mapTempo > 0) {
 		float e = ease(mapTempo);
@@ -991,7 +995,7 @@ void level_draw() {
 		drawMap(currentMap,0,0,true);
 		drawTileset(currentMap->front,0,0,0,1,0,1);
 	}
-	
+
 	if (debugCollision) {
 		BLENDALPHA();
 		for (int t,x,y = 0; y < mapHeight; y++) {
@@ -1006,13 +1010,13 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-	
+
 	//posição do ponto 0 do gráfico
 	double zeroHeightEase = lerp(zeroHeight,zeroHeightPrev,easeIn(zeroHeightTempo));
 	double offsetX = scaleX*(currentBase->x);
 	double offsetY = scaleY*((currentBase->y)+zeroHeightEase);
 	double offY = fmod(zeroHeightEase,1);
-	
+
 	//desenha os eixos
 	if (wireTempo < 1) {
 		BLENDALPHA();
@@ -1056,7 +1060,7 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-	
+
 	//plota a função
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
@@ -1121,7 +1125,7 @@ void level_draw() {
 			al_draw_text(data.font_Bold67,al_map_rgb(102,102,102),px(.055),textboxOffsetY,ALLEGRO_ALIGN_LEFT,"f(x) = ");
 		}
 	}
-	
+
 	//footer
 	BLENDALPHA();
 	al_draw_filled_rectangle(px(0),py(scaleY*17),px(1),py(1),al_map_rgba(255,255,255,128));
@@ -1154,7 +1158,7 @@ void level_draw() {
 			"espaço: iniciar - tab: inverter x - enter: abrir texto"
 		);
 	}
-	
+
 	//pause
 	if (paused) {
 		drawPause(true);

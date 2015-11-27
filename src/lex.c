@@ -158,7 +158,7 @@ int processaexpressao(unsigned char *expr, int i)
 			else
 				expt = concat(expt, token[i]);
 		}
-		
+
 		else if (isdigit(ante[0]) && token[i][0] == '(')
 		{
 			// coloquei a função aqui dentro para que ele nao entre no FOR
@@ -190,7 +190,7 @@ int processaexpressao(unsigned char *expr, int i)
 			free(tmp);
 			continue;
 		}
-		else if ((token[i + 1] != NULL && token[i - 1] != NULL) && 
+		else if ((token[i + 1] != NULL && token[i - 1] != NULL) &&
 				 (token[i + 1][0] == '^' && token[i - 1][0] == '-'))
 		{
 			expt = concat(expt, "(");
@@ -222,7 +222,10 @@ int processaexpressao(unsigned char *expr, int i)
 	memcpy(expr, expt, strlen(expt));
 	free(expt);
 	free(ante);
+#ifdef _WIN32
 	free(token);
-	//memset(token, '\0', NTOKEN);
+#elif __linux__
+	memset(token, '\0', NTOKEN);
+#endif
 	return i;
 }
