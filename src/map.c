@@ -435,27 +435,4 @@ void loadMap(TMap *map,int x,int y) {
 	
 	fixMap(map);
 	debugMap(map);
-	
-	/*
-	map->wiresN = 6;
-	map->wires = (TWire*)malloc(sizeof(TWire)*map->wiresN);
-	map->wires[0] = createWire(2);
-	map->wires[0].nodes[0] = newint2(0,9);
-	map->wires[0].nodes[1] = newint2(3,9);
-	map->wires[1] = createWire(2);
-	map->wires[1].nodes[0] = newint2(29,9);
-	map->wires[1].nodes[1] = newint2(32,9);
-	map->wires[2] = createWire(2);
-	map->wires[2].nodes[0] = newint2(4,0);
-	map->wires[2].nodes[1] = newint2(4,8);
-	map->wires[3] = createWire(2);
-	map->wires[3].nodes[0] = newint2(4,10);
-	map->wires[3].nodes[1] = newint2(4,18);
-	map->wires[4] = createWire(2);
-	map->wires[4].nodes[0] = newint2(28,0);
-	map->wires[4].nodes[1] = newint2(28,8);
-	map->wires[5] = createWire(2);
-	map->wires[5].nodes[0] = newint2(28,10);
-	map->wires[5].nodes[1] = newint2(28,18);
-	//*/
 }

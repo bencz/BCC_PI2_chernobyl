@@ -19,7 +19,7 @@
 #define CACHE_MAX 2200
 
 const double playerRadius = 2.0/3.0; //metade da largura do jogador
-const bool debugCollision = true; //se for true, mostra hitbox e destaca tiles usadas para colisão
+const bool debugCollision = false; //se for true, mostra hitbox e destaca tiles usadas para colisão
 const double scaleX = 1.0/mapWidth; //inversa da largura do mapa, para usar como porcentagem
 const double scaleY = 1.0/mapHeight; //igual, mas da altura
 const float parallaxIntensity = 2.0/3.0; //intensidade do movimento do parallax. 1 ele move normal, 0 ele n move
@@ -51,6 +51,8 @@ float textboxPosTempo; //posição da caixa de texto, animada
 float textboxSizeTempo; //tamanho da caixa de texto
 bool errorMsgShow; //mostrar uma mensagem de erro ou não
 int errorMsg; //índice da mensagem de erro
+float footerLeftWidth; //largura do footer com o erro
+float footerRightWidth; //largura do footer com as instruções
 
 double playerX,playerY,playerPrevY; //posição do jogador
 double playerSpriteX,playerSpriteY; //posição do sprite do jogador
@@ -65,6 +67,8 @@ bool wire; //tá no circuito
 float respawnTempo; //tempo de respawn, pra animação dele piscando
 float baseTempo; //tempo pra animação do lerp do player indo pra base
 
+float wireKeysShowTempo; //tempo da animação de mostrar as teclas em volta do jogador
+float wireKeysTempo; //tempo da animação das teclas pulsando
 TWire *wireNow; //cabo pelo qual ele tá passando
 int wireDir; //direção pela qual o jogador tá indo pelo cabo
 float wireTempo; //pra animação dele entrando/saindo do circuito
@@ -94,13 +98,13 @@ void calculatePoints(bool reset) {
 	double p = 0;
 	double resultado = 0;
 	int flag = 0,errorCode = 10;
-
+	
 	memset(lextemp,'\0',2048);
 	memcpy(lextemp,input.text,strlen(input.text));
 	analiselexica(lextemp,0);
 	memset(lextemp,'\0',2048);
 	processaexpressao(lextemp,0);
-
+	
 	setavariavel("x",&p);
 	errorCode = calcula(lextemp,&resultado,&flag);
 	if (errorCode != E_OK) {
@@ -129,12 +133,12 @@ void calculatePoints(bool reset) {
 			functionCachePlot[cacheCount] = errorCode == E_OK;
 			functionCache[cacheCount] = resultado;
 		}
+		#if _WIN32
+			free(lextemp);
+		#elif __linux__
+			memset(lextemp, '\0', 2048);
+		#endif
 	}
-#if _WIN32
-    free(lextemp);
-#elif __linux__
-    memset(lextemp, '\0', 2048);
-#endif
 }
 
 double getValueOnCache(double x,bool *plot) {
@@ -261,6 +265,7 @@ void startCircuit(TWire *w,int d) {
 		playerY = wireNow->nodes[wireNow->n-1].y;
 	}
 	playerFrame = 5;
+	wireKeysShowTempo = 1;
 }
 
 void moveMap(int x,int y) {
@@ -290,6 +295,7 @@ void moveMap(int x,int y) {
 			break;
 		}
 	}
+	wireKeysShowTempo = 0;
 }
 
 int collideStep(int j,int m,int n,int *x,int *y) {
@@ -456,7 +462,7 @@ void drawPlayer(float ox,float oy) {
 					sy *= .75;
 				}
 			}
-			drawSpriteSheet(bm,playerSpriteX*scaleX,playerSpriteY*scaleY,sx,sy,cx,cy,((int)playerFrame)%(cx*cy),0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
+			drawSpriteSheet(bm,ox+playerSpriteX*scaleX,oy+playerSpriteY*scaleY,sx,sy,cx,cy,((int)playerFrame)%(cx*cy),0,0,(functionDir < 0)?ALLEGRO_FLIP_HORIZONTAL:0);
 			if (debugCollision && wireTempo == 0) {
 				al_draw_rectangle(
 					px(ox+(playerSpriteX-playerRadius)*scaleX),py(oy+(playerSpriteY-playerRadius)*scaleY),
@@ -495,7 +501,7 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 		my = -scaleY;
 		My = 1+scaleY;
 	}
-
+	
 	//desenha o tileset do parallax
 	ALLEGRO_BITMAP *par;
 	switch (map->parallax[0]/576) {
@@ -505,8 +511,6 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 		default: par = NULL; break;
 	}
 	if (par != NULL) {
-		int w = al_get_bitmap_width(par);
-		int h = al_get_bitmap_height(par);
 		float x0 = clamp(ox,0,1);
 		float x1 = clamp(ox+1,0,1);
 		float y0 = clamp(oy,0,1);
@@ -517,10 +521,10 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 			x1-x0,y1-y0,x0,y0,(x1-x0)*game.idealProp,y1-y0,-1,-1,0
 		);
 	}
-
+	
 	//desenha o tilemap de trás
 	drawTileset(map->back,ox,oy,mx,Mx,my,My);
-
+	
 	//desenha os circuitos
 	for (int a = 0; a < map->wiresN; a++) {
 		int2 *i = map->wires[a].nodes;
@@ -538,7 +542,7 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 			j++;
 		}
 	}
-
+	
 	//desenha o guri
 	if (p) drawPlayer(ox,oy);
 }
@@ -560,18 +564,18 @@ bool level_start() {
 	scene.update = &level_update;
 	scene.draw = &level_draw;
 	scene.showLetterbox = true;
-
+	
 	mapX = mapStartX;
 	mapY = mapStartY;
-
+	
 	currentMap = createMap();
 	prevMap = createMap();
 	loadMap(currentMap,mapX,mapY);
-
+	
 	functionDir = 1;
 	functionGap = 1.0/64.0; //menor o valor, maior a precisão
 	functionPlot = false;
-
+	
 	cacheCount = 0;
 	plotTempo = 0;
 	dottedTempo = 0;
@@ -579,40 +583,44 @@ bool level_start() {
 	weightTempo = 0;
 	zeroHeight = zeroHeightPrev = 0;
 	zeroHeightTempo = 0;
-
+	
 	TBase *base = &currentMap->bases[mapStartBase];
 	if (base == NULL) return false;
 	setBase(base);
-
+	
 	playerSequence = 0;
 	playerFrame = 0;
-
+	
 	paused = false;
-
+	
 	moving = false;
 	dead = false;
 	wire = false;
 	respawnTempo = 1;
 	baseTempo = 0;
-
+	
+	wireKeysShowTempo = 0;
+	wireKeysTempo = 0;
 	wireTempo = 0;
 	wireNow = NULL;
 	wireIndex = 0;
 	wireProgress = 0;
-
+	
 	textboxPos = 1;
 	textboxPosTempo = 1;
 	textboxSizeTempo = 0;
-
+	footerLeftWidth = 0;
+	footerRightWidth = 0;
+	
 	stopMoving();
 	closeTextbox();
 	input.text[0] = '\0';
 	input.captureFinish = false;
 	input.caretPos = 0;
 	input.selectionStart = -1;
-
+	
 	calculatePoints(true);
-
+	
 	return true;
 }
 
@@ -626,6 +634,8 @@ bool level_load() {
 	LOADBITMAP(data.bitmap_parallax0,parallax0.png);
 	LOADBITMAP(data.bitmap_parallax1,parallax1.png);
 	LOADBITMAP(data.bitmap_parallax2,parallax2.png);
+	LOADBITMAP(data.bitmap_footer,footer.png);
+	LOADBITMAP(data.bitmap_textbox,textbox.png);
 	return true;
 }
 
@@ -639,6 +649,8 @@ void level_unload() {
 	UNLOADBITMAP(data.bitmap_parallax0);
 	UNLOADBITMAP(data.bitmap_parallax1);
 	UNLOADBITMAP(data.bitmap_parallax2);
+	UNLOADBITMAP(data.bitmap_footer);
+	UNLOADBITMAP(data.bitmap_textbox);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
 		currentMap = NULL;
@@ -657,7 +669,7 @@ void level_update() {
 		}
 		return;
 	}
-
+	
 	//keypresses
 	if (scene.tempo <= 0) {
 		if (input.escape->press) {
@@ -718,7 +730,7 @@ void level_update() {
 			}
 		}
 	}
-
+	
 	//animação do gráfico
 	if (zeroHeightTempo > 0) {
 		zeroHeightTempo -= game.delta*3;
@@ -766,7 +778,7 @@ void level_update() {
 			plotTempo = 0;
 		}
 	}
-
+	
 	//animação do movimento do jogador
 	if (respawnTempo > 0) {
 		respawnTempo -= game.delta;
@@ -783,7 +795,7 @@ void level_update() {
 			if (baseTempo < 0) baseTempo = 0;
 		}
 	}
-
+	
 	//movimentação principal (jogador, circuitos, tela)
 	if (mapTempo > 0) {
 		mapTempo -= game.delta;
@@ -935,7 +947,24 @@ void level_update() {
 			playerSpriteY = lerp(playerY,playerSpriteY,baseTempo);
 		}
 	}
-
+	
+	//animação das teclas pulsando
+	if (!moving && !input.captureText && wireTempo <= 0) {
+		if (wireKeysShowTempo < 1) {
+			wireKeysShowTempo += game.delta*4;
+			if (wireKeysShowTempo > 1) wireKeysShowTempo = 1;
+		}
+	} else {
+		if (wireKeysShowTempo > 0) {
+			wireKeysShowTempo -= game.delta*4;
+			if (wireKeysShowTempo < 0) wireKeysShowTempo = 0;
+		}
+	}
+	if (wireKeysShowTempo > 0) {
+		wireKeysTempo += game.delta*2;
+		while (wireKeysTempo >= 1) wireKeysTempo--;
+	}
+	
 	//textbox
 	if (input.captureText) {
 		if (textboxSizeTempo < 1) {
@@ -982,7 +1011,7 @@ void level_draw() {
 	} else {
 		weightThick = round(game.height/120.0);
 	}
-
+	
 	//desenha o mapa
 	if (mapTempo > 0) {
 		float e = ease(mapTempo);
@@ -995,7 +1024,7 @@ void level_draw() {
 		drawMap(currentMap,0,0,true);
 		drawTileset(currentMap->front,0,0,0,1,0,1);
 	}
-
+	
 	if (debugCollision) {
 		BLENDALPHA();
 		for (int t,x,y = 0; y < mapHeight; y++) {
@@ -1010,19 +1039,55 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-
+	
+	//desenha setas indicando caminhos que o jogador pode fazer
+	if (wireKeysShowTempo > 0) {
+		ALLEGRO_COLOR keysColor = al_map_rgba_f(1,1,1,easeOut(wireKeysShowTempo));
+		ALLEGRO_COLOR keysColor2 = al_map_rgba_f(.5,1,.5,easeOut(wireKeysShowTempo*2));
+		BLENDALPHA();
+		if (currentBase->wireUp != NULL) {
+			if (wire && wireNow == currentBase->wireUp) {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor2,playerSpriteX*scaleX,(playerSpriteY-.6-playerRadius-easeIn(1-wireTempo*4)*.125)*scaleY,scaleY,scaleY,4,2,4,0,0,0);
+			} else {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor,playerSpriteX*scaleX,(playerSpriteY-.7-playerRadius-sin(wireKeysTempo*3.1415)*.125)*scaleY,scaleY,scaleY,4,2,4,0,0,0);
+			}
+		}
+		if (currentBase->wireDown != NULL) {
+			if (wire && wireNow == currentBase->wireDown) {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor2,playerSpriteX*scaleX,(playerSpriteY+.6+playerRadius+easeIn(1-wireTempo*4)*.125)*scaleY,scaleY,scaleY,4,2,5,0,0,0);
+			} else {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor,playerSpriteX*scaleX,(playerSpriteY+.7+playerRadius+sin(wireKeysTempo*3.1415)*.125)*scaleY,scaleY,scaleY,4,2,5,0,0,0);
+			}
+		}
+		if (currentBase->wireLeft != NULL) {
+			if (wire && wireNow == currentBase->wireLeft) {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor2,(playerSpriteX-.6-playerRadius-easeIn(1-wireTempo*4)*.125)*scaleX,playerSpriteY*scaleY,scaleY,scaleY,4,2,6,0,0,0);
+			} else {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor,(playerSpriteX-.7-playerRadius-sin(wireKeysTempo*3.1415)*.125)*scaleX,playerSpriteY*scaleY,scaleY,scaleY,4,2,6,0,0,0);
+			}
+		}
+		if (currentBase->wireRight != NULL) {
+			if (wire && wireNow == currentBase->wireRight) {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor2,(playerSpriteX+.6+playerRadius+easeIn(1-wireTempo*4)*.125)*scaleX,playerSpriteY*scaleY,scaleY,scaleY,4,2,7,0,0,0);
+			} else {
+				drawSpriteSheetTinted(data.bitmap_keys,keysColor,(playerSpriteX+.7+playerRadius+sin(wireKeysTempo*3.1415)*.125)*scaleX,playerSpriteY*scaleY,scaleY,scaleY,4,2,7,0,0,0);
+			}
+		}
+		BLENDDEFAULT();
+	}
+	
 	//posição do ponto 0 do gráfico
 	double zeroHeightEase = lerp(zeroHeight,zeroHeightPrev,easeIn(zeroHeightTempo));
 	double offsetX = scaleX*(currentBase->x);
 	double offsetY = scaleY*((currentBase->y)+zeroHeightEase);
 	double offY = fmod(zeroHeightEase,1);
-
+	
 	//desenha os eixos
 	if (wireTempo < 1) {
 		BLENDALPHA();
 		ALLEGRO_COLOR axisColor = al_map_rgba(255,255,255,(int)lerp(25,76,textboxSizeTempo));
 		if (textboxSizeTempo > 0) {
-			ALLEGRO_COLOR gridColor = al_map_rgba(255,255,255,(int)(textboxSizeTempo*4));
+			ALLEGRO_COLOR gridColor = al_map_rgba(255,255,255,(int)(textboxSizeTempo*8));
 			int r;
 			for (int x = 0; x <= mapWidth; x++) {
 				r = px((double)x/mapWidth);
@@ -1060,7 +1125,7 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-
+	
 	//plota a função
 	if (weightTempo > 0 && cacheCount > 0) {
 		float t = easeIn(plotTempo);
@@ -1081,17 +1146,20 @@ void level_draw() {
 		}
 		BLENDDEFAULT();
 	}
-
+	
 	//textbox
 	if (textboxSizeTempo > 0) {
 		float textboxHeight = lerp(.08,.82,ease(textboxPosTempo));
-		BLENDALPHA();
+		//BLENDALPHA();
 		float textboxSizeEase = easeIn(1-textboxSizeTempo);
-		al_draw_filled_rectangle(px(.046875),py(textboxHeight+.05*textboxSizeEase),px(.953125),py(.1+textboxHeight-.05*textboxSizeEase),al_map_rgba(255,255,255,204));
-		BLENDDEFAULT();
+		drawBitmap(data.bitmap_textbox,.5,textboxHeight+.05,1.6328125,.1203125*(1-textboxSizeEase),0,0,0);
+		//al_draw_filled_rectangle(px(.046875),py(textboxHeight+.05*textboxSizeEase),px(.953125),py(.1+textboxHeight-.05*textboxSizeEase),al_map_rgba(255,255,255,204));
+		//BLENDDEFAULT();
 		if (textboxSizeTempo >= .5f) {
-			int textboxOffsetX = px(.16);
+			int textboxOffsetX = px(.055);
 			int textboxOffsetY = py(.01+textboxHeight);
+			al_draw_text(data.font_Bold67,al_map_rgb(102,102,102),textboxOffsetX,textboxOffsetY,ALLEGRO_ALIGN_LEFT,"f(x) = ");
+			textboxOffsetX += al_get_text_width(data.font_Bold67,"f(x) = ");
 			int selOffset = -1;
 			for (int a = 0; 1; a++) {
 				if (!paused && a == input.caretPos && input.caretBlink < .5f) {
@@ -1122,43 +1190,77 @@ void level_draw() {
 				al_draw_text(data.font_Bold67,al_map_rgb(51,51,51),textboxOffsetX,textboxOffsetY,ALLEGRO_ALIGN_LEFT,textboxChar);
 				textboxOffsetX += al_get_text_width(data.font_Bold67,textboxChar);
 			}
-			al_draw_text(data.font_Bold67,al_map_rgb(102,102,102),px(.055),textboxOffsetY,ALLEGRO_ALIGN_LEFT,"f(x) = ");
 		}
 	}
-
+	
 	//footer
-	BLENDALPHA();
-	al_draw_filled_rectangle(px(0),py(scaleY*17),px(1),py(1),al_map_rgba(255,255,255,128));
-	BLENDDEFAULT();
 	float footerHeight = .825f;
-	if (errorMsgShow) {
-		al_draw_filled_triangle(
-			px(.009),py(.165+footerHeight),
-			px(.031),py(.165+footerHeight),
-			px(.02),py(.125+footerHeight),
-			al_map_rgb(255,204,15)
-		);
-		al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(.02),py(.127+footerHeight),ALLEGRO_ALIGN_CENTRE,"!");
-		al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(.032),py(.125+footerHeight),ALLEGRO_ALIGN_LEFT,mensagensDeErro[errorMsg]);
+	if (wireTempo < 1) {
+		float lerpVel = 12;
+		float slide = scaleY*easeIn(wireTempo)*1.2;
+		float footerY = py(.125+footerHeight+slide);
+		float recWidth = 1.0/game.width;
+		BLENDALPHA();
+		drawBitmapRegion(data.bitmap_footer,0,0,.125,1,0,1+slide,footerLeftWidth*game.idealProp,scaleY*1.1,-1,1,0);
+		drawBitmapRegion(data.bitmap_footer,.21875,0,.28125,1,footerLeftWidth,1+slide,scaleY*1.2375,scaleY*1.1,-1,1,0);
+		BLENDDEFAULT();
+		float nx;
+		if (errorMsgShow) {
+			/*
+			al_draw_filled_triangle(
+				px(.009),py(.165+footerHeight),
+				px(.031),py(.165+footerHeight),
+				px(.02),py(.125+footerHeight),
+				al_map_rgb(255,204,15)
+			);
+			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(.02),py(.127+footerHeight),ALLEGRO_ALIGN_CENTRE,"!");
+			*/
+			nx = al_get_text_width(data.font_Regular37,mensagensDeErro[errorMsg])*recWidth+.01;
+			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(.01+footerLeftWidth-nx),footerY,ALLEGRO_ALIGN_LEFT,mensagensDeErro[errorMsg]);
+		} else {
+			nx = -scaleY*.7;
+		}
+		nx = (int)(nx*game.width)/(float)game.width;
+		float ab = fabs(footerLeftWidth-nx)*512;
+		if (ab > 0) footerLeftWidth = lerp(footerLeftWidth,nx,game.delta*((ab < 1)?(lerpVel/ab):lerpVel));
+		float keyGap = .4;
+		BLENDALPHA();
+		drawBitmapRegion(data.bitmap_footer,.875,0,.125,1,1,1+slide,footerRightWidth*game.idealProp,scaleY*1.1,1,1,0);
+		drawBitmapRegion(data.bitmap_footer,.5,0,.28125,1,1-footerRightWidth,1+slide,scaleY*1.2375,scaleY*1.1,1,1,0);
+		BLENDDEFAULT();
+		nx = 1-footerRightWidth;
+		drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,1,-1,1,0);
+		nx += scaleX;
+		al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"trocar direção");
+		nx += al_get_text_width(data.font_Regular37,"trocar direção")*recWidth+scaleX*keyGap;
+		if (moving) {
+			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,2,-1,1,0);
+			nx += scaleX;
+			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,0,-1,1,0);
+			nx += scaleX;
+			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"desfazer");
+			nx += al_get_text_width(data.font_Regular37,"desfazer")*recWidth+scaleX*keyGap;
+		} else if (input.captureText) {
+			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,0,-1,1,0);
+			nx += scaleX;
+			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"fechar texto");
+			nx += al_get_text_width(data.font_Regular37,"fechar texto")*recWidth+scaleX*keyGap;
+		} else {
+			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,2,-1,1,0);
+			nx += scaleX;
+			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"iniciar");
+			nx += al_get_text_width(data.font_Regular37,"iniciar")*recWidth+scaleX*keyGap;
+			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,0,-1,1,0);
+			nx += scaleX;
+			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"abrir texto");
+			nx += al_get_text_width(data.font_Regular37,"abrir texto")*recWidth+scaleX*keyGap;
+		}
+		nx -= 1-footerRightWidth;
+		nx = (int)(nx*game.width)/(float)game.width;
+		ab = fabs(footerRightWidth-nx)*512;
+		if (ab > 0) footerRightWidth = lerp(footerRightWidth,nx,game.delta*((ab < 1)?(lerpVel/ab):lerpVel));
 	}
-	if (wireTempo > 0) {
-	} else if (moving) {
-		al_draw_text(
-			data.font_Regular37,al_map_rgb(51,51,51),px(.99),py(.125+footerHeight),ALLEGRO_ALIGN_RIGHT,
-			"tab: inverter x - espaço/enter: desfazer"
-		);
-	} else if (input.captureText) {
-		al_draw_text(
-			data.font_Regular37,al_map_rgb(51,51,51),px(.99),py(.125+footerHeight),ALLEGRO_ALIGN_RIGHT,
-			"tab: inverter x - enter: fechar texto"
-		);
-	} else {
-		al_draw_text(
-			data.font_Regular37,al_map_rgb(51,51,51),px(.99),py(.125+footerHeight),ALLEGRO_ALIGN_RIGHT,
-			"espaço: iniciar - tab: inverter x - enter: abrir texto"
-		);
-	}
-
+	
 	//pause
 	if (paused) {
 		drawPause(true);

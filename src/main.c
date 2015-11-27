@@ -39,28 +39,29 @@ void unloadFonts() {
 }
 
 bool load() {
+	LOADBITMAP(data.bitmap_keys,keys.png);
 	return true;
 }
 
 void unload() {
-	//
+	UNLOADBITMAP(data.bitmap_keys);
 }
 
 bool start() {
 	al_set_window_title(game.display,"Projeto Chernobyl");
 	al_clear_to_color(al_map_rgb(0,0,0));
 	al_flip_display();
-
+	
 	//inicia o input
 	inputStart();
-
+	
 	//seleciona a cena inicial. se retornar false, deu algum erro ao carregar
 	if (!sceneSelect(FSCENE)) {
 		return false;
 	}
 	scene.tempo = -1;
 	scene.exitRequest = false;
-
+	
 	return true;
 }
 
@@ -83,13 +84,13 @@ bool update() {
 		scene.tempo += game.delta*2.5;
 		if (scene.tempo > 0) scene.tempo = 0;
 	}
-
+	
 	//no caso de nenhuma cena nova ter sido chamada
 	if (!sceneLoaded) {
 		//updates da cena
 		(*scene.update)();
 		(*scene.draw)();
-
+		
 		//letterbox
 		//dá pra botar uns gráficos bonitinhos no lugar de faixas pretas chatas
 		if (scene.showLetterbox) {
@@ -101,7 +102,7 @@ bool update() {
 				al_draw_filled_rectangle(0,game.offsety+game.height,game.fwidth,game.fheight,al_map_rgb(0,0,0));
 			}
 		}
-
+		
 		//efeito de fade in/out
 		if (scene.tempo > 0) {
 			al_draw_filled_rectangle(0,0,game.fwidth,game.fheight,al_map_rgba_f(0,0,0,ease((1-scene.tempo)*1.125)));
@@ -111,10 +112,10 @@ bool update() {
 
 		al_flip_display();
 	}
-
+	
 	//atualiza o input
 	inputUpdate();
-
+	
 	return true;
 }
 
@@ -201,13 +202,13 @@ void getArgs(int argc,char **args) {
 int main(int argc,char **args) {
 	game.fwidth = game.fheight = 0;
 	getArgs(argc,args);
-
+	
 	//cálculo inicial da resolução, e outras coisas
 	game.idealProp = 16.0/9.0;
 	if (game.fwidth <= 0) {
 		if (game.fheight <= 0) {
-			game.fwidth = 960;
-			game.fheight = 540;
+			game.fwidth = 1024;
+			game.fheight = 576;
 		} else {
 			game.fwidth = (int)round(game.fheight*game.idealProp);
 		}
@@ -219,7 +220,7 @@ int main(int argc,char **args) {
 	al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS,1,ALLEGRO_SUGGEST);
 	al_set_new_display_option(ALLEGRO_SAMPLES,4,ALLEGRO_SUGGEST);
 	calculateWindowSize();
-
+	
 	//timer
 	game.fps = 60;
 	game.delta = 1.0/game.fps;
@@ -227,7 +228,7 @@ int main(int argc,char **args) {
 	//volume
 	game.volumeBgm = 1;
 	game.volumeSfx = 1;
-
+	
 	//inicia tudo q o allegro precisa pra iniciar
 	if (!al_init()) {
 		fprintf(stderr,"erro: o allegro não pôde ser inicializado\n");
@@ -276,7 +277,7 @@ int main(int argc,char **args) {
 	al_register_event_source(game.eventQueue,al_get_timer_event_source(game.timer));
 	al_register_event_source(game.eventQueue,al_get_mouse_event_source());
 	al_register_event_source(game.eventQueue,al_get_keyboard_event_source());
-
+	
 	//início do programa
 	game.path = al_get_standard_path(ALLEGRO_EXENAME_PATH);
 	if (!load() || !loadFonts() || !start()) {
@@ -287,7 +288,7 @@ int main(int argc,char **args) {
 		al_destroy_event_queue(game.eventQueue);
 		return -1;
 	}
-
+	
 	//update
 	al_start_timer(game.timer);
 	bool upd = true;
@@ -326,7 +327,7 @@ int main(int argc,char **args) {
 			}
 		}
 	}
-
+	
 	//fim do programa
 	(*scene.unload)();
 	unload();

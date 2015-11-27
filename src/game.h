@@ -64,6 +64,9 @@ struct Data {
 	ALLEGRO_BITMAP *bitmap_parallax0;
 	ALLEGRO_BITMAP *bitmap_parallax1;
 	ALLEGRO_BITMAP *bitmap_parallax2;
+	ALLEGRO_BITMAP *bitmap_keys;
+	ALLEGRO_BITMAP *bitmap_footer;
+	ALLEGRO_BITMAP *bitmap_textbox;
 	
 } data;
 
