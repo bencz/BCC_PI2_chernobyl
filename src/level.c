@@ -60,12 +60,15 @@ int playerSequence; //índice da animação do jogador
 float playerFrame; //índice do frame da animação
 
 bool paused; //tá pausado
+float showPauseTempo; //tempo da animação do botão de pause
 
 bool moving; //tá movendo
 bool dead; //tá morrendo
 bool wire; //tá no circuito
 float respawnTempo; //tempo de respawn, pra animação dele piscando
 float baseTempo; //tempo pra animação do lerp do player indo pra base
+bool prevBaseIgnore; //ignorar base original durante colisão
+bool prevBaseFound; //true se encontrou a mesma base na última colisão
 
 float wireKeysShowTempo; //tempo da animação de mostrar as teclas em volta do jogador
 float wireKeysTempo; //tempo da animação das teclas pulsando
@@ -228,6 +231,7 @@ void startMoving() {
 	moving = true;
 	respawnTempo = 0;
 	playerFrame = 0;
+	prevBaseIgnore = true;
 }
 
 void openTextbox() {
@@ -310,8 +314,12 @@ int collideStep(int j,int m,int n,int *x,int *y) {
 		}
 		if (b == -1 && t == 2) {
 			TBase *base = getBase(i,j);
-			if (base != NULL && base != currentBase) {
-				b = i;
+			if (base != NULL) {
+				if (prevBaseIgnore && base == currentBase) {
+					prevBaseFound = true;
+				} else {
+					b = i;
+				}
 			}
 		}
 	}
@@ -330,6 +338,7 @@ int collide(double delta,int *x,int *y,bool debug) {
 	if (left < 0) left = 0;
 	if (right > mapWidth) right = mapWidth;
 	int top,bot;
+	if (!debug) prevBaseFound = false;
 	if (delta > 0) {
 		top = floor(playerY-playerRadius-delta);
 		bot = ceil(playerY+playerRadius);
@@ -358,6 +367,9 @@ int collide(double delta,int *x,int *y,bool debug) {
 			j = collideStep(i,left,right,x,y);
 			if (j) return j;
 		}
+	}
+	if (!debug && !prevBaseFound) {
+		prevBaseIgnore = false;
 	}
 	if (top == 0 && bot == mapHeight) {
 		if (delta < 0) {
@@ -634,8 +646,6 @@ bool level_load() {
 	LOADBITMAP(data.bitmap_parallax0,parallax0.png);
 	LOADBITMAP(data.bitmap_parallax1,parallax1.png);
 	LOADBITMAP(data.bitmap_parallax2,parallax2.png);
-	LOADBITMAP(data.bitmap_footer,footer.png);
-	LOADBITMAP(data.bitmap_textbox,textbox.png);
 	return true;
 }
 
@@ -649,8 +659,6 @@ void level_unload() {
 	UNLOADBITMAP(data.bitmap_parallax0);
 	UNLOADBITMAP(data.bitmap_parallax1);
 	UNLOADBITMAP(data.bitmap_parallax2);
-	UNLOADBITMAP(data.bitmap_footer);
-	UNLOADBITMAP(data.bitmap_textbox);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
 		currentMap = NULL;
@@ -1150,11 +1158,8 @@ void level_draw() {
 	//textbox
 	if (textboxSizeTempo > 0) {
 		float textboxHeight = lerp(.08,.82,ease(textboxPosTempo));
-		//BLENDALPHA();
 		float textboxSizeEase = easeIn(1-textboxSizeTempo);
-		drawBitmap(data.bitmap_textbox,.5,textboxHeight+.05,1.6328125,.1203125*(1-textboxSizeEase),0,0,0);
-		//al_draw_filled_rectangle(px(.046875),py(textboxHeight+.05*textboxSizeEase),px(.953125),py(.1+textboxHeight-.05*textboxSizeEase),al_map_rgba(255,255,255,204));
-		//BLENDDEFAULT();
+		drawBox(.5,textboxHeight+.05,.9,.1*(1-textboxSizeEase),al_map_rgb(97,180,196),al_map_rgb(230,251,255));
 		if (textboxSizeTempo >= .5f) {
 			int textboxOffsetX = px(.055);
 			int textboxOffsetY = py(.01+textboxHeight);
@@ -1187,23 +1192,19 @@ void level_draw() {
 					selOffset = textboxOffsetX;
 				}
 				textboxChar[0] = input.text[a];
-				al_draw_text(data.font_Bold67,al_map_rgb(51,51,51),textboxOffsetX,textboxOffsetY,ALLEGRO_ALIGN_LEFT,textboxChar);
+				al_draw_text(data.font_Bold67,COLOR_TEXT,textboxOffsetX,textboxOffsetY,ALLEGRO_ALIGN_LEFT,textboxChar);
 				textboxOffsetX += al_get_text_width(data.font_Bold67,textboxChar);
 			}
 		}
 	}
 	
 	//footer
-	float footerHeight = .825f;
 	if (wireTempo < 1) {
 		float lerpVel = 12;
 		float slide = scaleY*easeIn(wireTempo)*1.2;
-		float footerY = py(.125+footerHeight+slide);
+		float footerY = py(.95+slide);
 		float recWidth = 1.0/game.width;
-		BLENDALPHA();
-		drawBitmapRegion(data.bitmap_footer,0,0,.125,1,0,1+slide,footerLeftWidth*game.idealProp,scaleY*1.1,-1,1,0);
-		drawBitmapRegion(data.bitmap_footer,.21875,0,.28125,1,footerLeftWidth,1+slide,scaleY*1.2375,scaleY*1.1,-1,1,0);
-		BLENDDEFAULT();
+		drawCorner(0,1,footerLeftWidth,0,al_map_rgb(246,87,75),al_map_rgb(252,215,172));
 		float nx;
 		if (errorMsgShow) {
 			/*
@@ -1213,46 +1214,45 @@ void level_draw() {
 				px(.02),py(.125+footerHeight),
 				al_map_rgb(255,204,15)
 			);
-			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(.02),py(.127+footerHeight),ALLEGRO_ALIGN_CENTRE,"!");
+			al_draw_text(data.font_Regular37,COLOR_TEXT,px(.02),py(.127+footerHeight),ALLEGRO_ALIGN_CENTRE,"!");
 			*/
 			nx = al_get_text_width(data.font_Regular37,mensagensDeErro[errorMsg])*recWidth+.01;
-			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(.01+footerLeftWidth-nx),footerY,ALLEGRO_ALIGN_LEFT,mensagensDeErro[errorMsg]);
+			al_draw_text(data.font_Regular37,COLOR_TEXT,px(.01+footerLeftWidth-nx),footerY,ALLEGRO_ALIGN_LEFT,mensagensDeErro[errorMsg]);
 		} else {
-			nx = -scaleY*.7;
+			nx = -scaleY;
 		}
 		nx = (int)(nx*game.width)/(float)game.width;
 		float ab = fabs(footerLeftWidth-nx)*512;
 		if (ab > 0) footerLeftWidth = lerp(footerLeftWidth,nx,game.delta*((ab < 1)?(lerpVel/ab):lerpVel));
 		float keyGap = .4;
-		BLENDALPHA();
-		drawBitmapRegion(data.bitmap_footer,.875,0,.125,1,1,1+slide,footerRightWidth*game.idealProp,scaleY*1.1,1,1,0);
-		drawBitmapRegion(data.bitmap_footer,.5,0,.28125,1,1-footerRightWidth,1+slide,scaleY*1.2375,scaleY*1.1,1,1,0);
-		BLENDDEFAULT();
+		drawCorner(1,1,footerRightWidth,slide,COLOR_HGHL,COLOR_SCND);
 		nx = 1-footerRightWidth;
 		drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,1,-1,1,0);
 		nx += scaleX;
-		al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"trocar direção");
+		al_draw_text(data.font_Regular37,COLOR_TEXT,px(nx),footerY,ALLEGRO_ALIGN_LEFT,"trocar direção");
 		nx += al_get_text_width(data.font_Regular37,"trocar direção")*recWidth+scaleX*keyGap;
 		if (moving) {
 			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,2,-1,1,0);
 			nx += scaleX;
 			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,0,-1,1,0);
 			nx += scaleX;
-			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"desfazer");
+			al_draw_text(data.font_Regular37,COLOR_TEXT,px(nx),footerY,ALLEGRO_ALIGN_LEFT,"desfazer");
 			nx += al_get_text_width(data.font_Regular37,"desfazer")*recWidth+scaleX*keyGap;
 		} else if (input.captureText) {
 			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,0,-1,1,0);
 			nx += scaleX;
-			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"fechar texto");
+			al_draw_text(data.font_Regular37,COLOR_TEXT,px(nx),footerY,ALLEGRO_ALIGN_LEFT,"fechar texto");
 			nx += al_get_text_width(data.font_Regular37,"fechar texto")*recWidth+scaleX*keyGap;
 		} else {
-			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,2,-1,1,0);
-			nx += scaleX;
-			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"iniciar");
-			nx += al_get_text_width(data.font_Regular37,"iniciar")*recWidth+scaleX*keyGap;
+			if (!errorMsgShow) {
+				drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,2,-1,1,0);
+				nx += scaleX;
+				al_draw_text(data.font_Regular37,COLOR_TEXT,px(nx),footerY,ALLEGRO_ALIGN_LEFT,"iniciar");
+				nx += al_get_text_width(data.font_Regular37,"iniciar")*recWidth+scaleX*keyGap;
+			}
 			drawSpriteSheet(data.bitmap_keys,nx,1+slide,scaleY,scaleY,4,2,0,-1,1,0);
 			nx += scaleX;
-			al_draw_text(data.font_Regular37,al_map_rgb(51,51,51),px(nx),footerY,ALLEGRO_ALIGN_LEFT,"abrir texto");
+			al_draw_text(data.font_Regular37,COLOR_TEXT,px(nx),footerY,ALLEGRO_ALIGN_LEFT,"abrir texto");
 			nx += al_get_text_width(data.font_Regular37,"abrir texto")*recWidth+scaleX*keyGap;
 		}
 		nx -= 1-footerRightWidth;
@@ -1262,6 +1262,25 @@ void level_draw() {
 	}
 	
 	//pause
+	if (!paused && input.inactivity > 3) {
+		if (showPauseTempo < 1) {
+			showPauseTempo += game.delta*2;
+			if (showPauseTempo > 1) showPauseTempo = 1;
+		}
+	} else {
+		if (showPauseTempo > 0) {
+			showPauseTempo -= game.delta*2;
+			if (showPauseTempo < 0) showPauseTempo = 0;
+		}
+	}
+	if (showPauseTempo > 0) {
+		float nx = .01+scaleX+(float)al_get_text_width(data.font_Regular37,"pause")/game.width;
+		float slide = scaleY*easeIn(1-showPauseTempo)*1.2;
+		nx = (int)(nx*game.width)/(float)game.width;
+		drawCorner(0,0,nx,slide,COLOR_HGHL,COLOR_SCND);
+		drawSpriteSheet(data.bitmap_keys,.01,-slide,scaleY,scaleY,4,2,3,-1,-1,0);
+		al_draw_text(data.font_Regular37,COLOR_TEXT,px(.01+scaleX),py(.0045-slide),ALLEGRO_ALIGN_LEFT,"pause");
+	}
 	if (paused) {
 		drawPause(true);
 	}

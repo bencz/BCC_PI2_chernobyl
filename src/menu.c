@@ -55,12 +55,10 @@ void menu_update() {
 
 void menu_draw() {
 	al_clear_to_color(al_map_rgb(255,255,255));
-	ALLEGRO_COLOR colorButton = al_map_rgb(0,0,0);
-	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 
 	//textos
-	al_draw_text(data.font_Regular52,colorButton,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
-	al_draw_text(data.font_Regular52,(selection == 0)?colorButton2:colorButton,px(.5),py(.45),ALLEGRO_ALIGN_CENTRE,"jogar");
-	al_draw_text(data.font_Regular52,(selection == 1)?colorButton2:colorButton,px(.5),py(.5),ALLEGRO_ALIGN_CENTRE,"configurações");
-	al_draw_text(data.font_Regular52,(selection == 2)?colorButton2:colorButton,px(.5),py(.55),ALLEGRO_ALIGN_CENTRE,"sair");
+	al_draw_text(data.font_Regular52,COLOR_TEXT,px(.5),py(.05),ALLEGRO_ALIGN_CENTRE,"projeto chernobyl");
+	al_draw_text(data.font_Regular52,(selection == 0)?COLOR_HGHL:COLOR_TEXT,px(.5),py(.45),ALLEGRO_ALIGN_CENTRE,"jogar");
+	al_draw_text(data.font_Regular52,(selection == 1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(.5),ALLEGRO_ALIGN_CENTRE,"configurações");
+	al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(.55),ALLEGRO_ALIGN_CENTRE,"sair");
 }

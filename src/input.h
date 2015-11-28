@@ -26,6 +26,7 @@ struct Input {
 	key *tab;
 	key *escape;
 	
+	float inactivity;
 	char text[1024];
 	bool captureText;
 	bool captureFinish;

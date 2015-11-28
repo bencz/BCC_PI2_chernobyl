@@ -19,8 +19,6 @@ bool confirm;
 float confirmTempo;
 int selection2;
 
-float pulseTempo;
-
 void startPause(bool ingame) {
 	unpausing = false;
 	confirm = false;
@@ -46,28 +44,15 @@ void updateSlider(float *value) {
 }
 
 void drawSlider(float y,float value,bool glow,const char *str) {
-	ALLEGRO_COLOR colorButton = al_map_rgb(0,0,0);
-	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 	float width = .18;
 	float height = .05;
 	float x5 = dx(.5);
 	float x65 = dx(.5+width);
 	float xlerp = dx(lerp(.5,.5+width,value));
 	float y05 = dy(y+height);
-	al_draw_filled_triangle(
-		x5,y05,
-		x65,y05,
-		x65,dy(y),
-		al_map_rgb(204,204,204)
-	);
-	al_draw_filled_triangle(
-		x5,y05,
-		xlerp,y05,
-		xlerp,dy(lerp(y+height,y,value)),
-		glow?colorButton2:colorButton
-	);
-	//al_draw_textf(data.font_Regular52,glow?colorButton2:colorButton,px(.5),py(y),ALLEGRO_ALIGN_CENTRE,"%.2f",value);
-	al_draw_text(data.font_Regular52,glow?colorButton2:colorButton,px(.49),py(y),ALLEGRO_ALIGN_RIGHT,str);
+	al_draw_filled_triangle(x5,y05,x65,y05,x65,dy(y),COLOR_SCND);
+	al_draw_filled_triangle(x5,y05,xlerp,y05,xlerp,dy(lerp(y+height,y,value)),glow?COLOR_HGHL:COLOR_TEXT);
+	al_draw_text(data.font_Regular52,glow?COLOR_HGHL:COLOR_TEXT,px(.49),py(y),ALLEGRO_ALIGN_RIGHT,str);
 }
 
 bool updatePause(bool ingame) {
@@ -135,43 +120,26 @@ bool updatePause(bool ingame) {
 				selection2 = 1;
 			}
 		}
-		/*
-		if (input.space->press) {
-			pulseTempo = 1.3;
-		} else if (input.space->release) {
-			pulseTempo = 1.5;
-		} else if (input.space->hold) {
-			pulseTempo = lerp(pulseTempo,1.1,game.delta*10);
-		} else {
-			pulseTempo = lerp(pulseTempo,1,game.delta*10);
-		}
-		*/
-	} else {
-		//pulseTempo = lerp(pulseTempo,1,game.delta*10);
 	}
 	return false;
 }
 
 void drawPause(bool ingame) {
-	ALLEGRO_COLOR colorButton = al_map_rgb(0,0,0);
-	ALLEGRO_COLOR colorButton2 = al_map_rgb(255,0,51);
 	ALLEGRO_COLOR bg = al_map_rgba(255,255,255,204);
 	float l = easeOut(pauseTempo);
-	
-	//ovelha
-	//drawBitmap(data.bitmap_test,.5,.5,pulseTempo*.25*l,pulseTempo*.25*l,0,0,0);
 	
 	//textos
 	if (ingame) {
 		BLENDALPHA();
-		al_draw_filled_rectangle(px(.3),py(lerp(.5,.3,l)),px(.7),py(lerp(.5,.7,l)),bg);
+		al_draw_filled_rectangle(px(0),py(0),px(1),py(1),al_map_rgba_f(0,0,0,.375*l));
 		BLENDDEFAULT();
-		al_draw_text(data.font_Regular37,colorButton,px(.5),py(lerp(.5,.315,l)),ALLEGRO_ALIGN_CENTRE,"pause");
-		al_draw_text(data.font_Regular52,(selection == -1)?colorButton2:colorButton,px(.5),py(lerp(.5,.38,l)),ALLEGRO_ALIGN_CENTRE,"continuar");
-		al_draw_text(data.font_Regular52,(selection == 2)?colorButton2:colorButton,px(.5),py(lerp(.5,.62,l)),ALLEGRO_ALIGN_CENTRE,"sair ao menu");
+		drawBox(.5,.5,.4,.4*l,COLOR_HGHL,COLOR_SCND);
+		al_draw_text(data.font_Regular37,COLOR_TEXT,px(.5),py(lerp(.5,.315,l)),ALLEGRO_ALIGN_CENTRE,"pause");
+		al_draw_text(data.font_Regular52,(selection == -1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.38,l)),ALLEGRO_ALIGN_CENTRE,"continuar");
+		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.62,l)),ALLEGRO_ALIGN_CENTRE,"sair ao menu");
 	} else {
-		al_draw_text(data.font_Regular52,colorButton,px(.5),py(lerp(.5,.05,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
-		al_draw_text(data.font_Regular52,(selection == 2)?colorButton2:colorButton,px(.5),py(lerp(.5,.9,l)),ALLEGRO_ALIGN_CENTRE,"voltar");
+		al_draw_text(data.font_Regular52,COLOR_TEXT,px(.5),py(lerp(.5,.05,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
+		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.9,l)),ALLEGRO_ALIGN_CENTRE,"voltar");
 	}
 	
 	//sliders
@@ -182,11 +150,12 @@ void drawPause(bool ingame) {
 	if (confirmTempo > 0) {
 		float m = easeOut(confirmTempo);
 		BLENDALPHA();
-		al_draw_filled_rectangle(px(.25),py(lerp(.5,.4,m)),px(.75),py(lerp(.5,.6,m)),bg);
+		al_draw_filled_rectangle(px(0),py(0),px(1),py(1),al_map_rgba_f(0,0,0,.375*m));
 		BLENDDEFAULT();
-		al_draw_text(data.font_Regular37,colorButton,px(.5),py(lerp(.5,.415,m)),ALLEGRO_ALIGN_CENTRE,"tem certeza de que deseja sair?");
-		al_draw_text(data.font_Regular52,(selection2 == 0)?colorButton2:colorButton,px(.5),py(lerp(.5,.46,m)),ALLEGRO_ALIGN_CENTRE,"sim");
-		al_draw_text(data.font_Regular52,(selection2 == 1)?colorButton2:colorButton,px(.5),py(lerp(.5,.52,m)),ALLEGRO_ALIGN_CENTRE,"nem");
+		drawBox(.5,.5,.5,.2*m,COLOR_HGHL,COLOR_SCND);
+		al_draw_text(data.font_Regular37,COLOR_TEXT,px(.5),py(lerp(.5,.415,m)),ALLEGRO_ALIGN_CENTRE,"tem certeza de que deseja sair?");
+		al_draw_text(data.font_Regular52,(selection2 == 0)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.46,m)),ALLEGRO_ALIGN_CENTRE,"sim");
+		al_draw_text(data.font_Regular52,(selection2 == 1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.52,m)),ALLEGRO_ALIGN_CENTRE,"nem");
 	}
 }
 
@@ -204,7 +173,6 @@ bool settings_start() {
 	scene.draw = &settings_draw;
 	scene.showLetterbox = true;
 	
-	pulseTempo = 1;
 	startPause(false);
 	pauseTempo = 1;
 	

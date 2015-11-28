@@ -36,6 +36,7 @@ void inputStart() {
 	input.tab = initKey();
 	input.escape = initKey();
 	
+	input.inactivity = 0;
 	input.text[0] = '\0';
 	input.captureText = false;
 	input.captureFinish = false;
@@ -56,6 +57,7 @@ void inputUpdate() {
 	resetKey(input.tab);
 	resetKey(input.escape);
 	
+	input.inactivity += game.delta;
 	input.captureFinish = false;
 	input.textUpdate = false;
 	input.caretBlink += game.delta*1.5;
@@ -95,6 +97,7 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 			default: return;
 		}
 	}
+	input.inactivity = 0;
 	if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
 		k->press = true;
 		k->hold = true;
@@ -107,6 +110,7 @@ void inputKeyPress(ALLEGRO_EVENT ev) {
 }
 
 void inputKeyChar(ALLEGRO_EVENT ev) {
+	input.inactivity = 0;
 	input.caretBlink = 0;
 	int len = strlen(input.text);
 	if (ev.keyboard.keycode == ALLEGRO_KEY_LEFT) {

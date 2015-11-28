@@ -29,6 +29,10 @@
 #define UNLOADFONT(NAME) \
 	if (NAME) al_destroy_font(NAME)
 
+#define COLOR_TEXT al_map_rgb(51,51,51)
+#define COLOR_HGHL al_map_rgb(52,155,52)
+#define COLOR_SCND al_map_rgb(208,232,208)
+
 struct Game {
 
 	ALLEGRO_DISPLAY *display; //janela
@@ -65,8 +69,6 @@ struct Data {
 	ALLEGRO_BITMAP *bitmap_parallax1;
 	ALLEGRO_BITMAP *bitmap_parallax2;
 	ALLEGRO_BITMAP *bitmap_keys;
-	ALLEGRO_BITMAP *bitmap_footer;
-	ALLEGRO_BITMAP *bitmap_textbox;
 	
 } data;
 

@@ -23,7 +23,7 @@
 bool loadFonts() {
 	//o número na direita indica o tamanho da fonte.
 	//como ele depende do tamanho da janela, a fonte é numerada
-	//de acordo com a porcentagem da altura da janela x1000.
+	//de acordo com a razão da altura da janela x1000.
 	// (7/135)*1000 = 51.851... ~= 52
 	// (1/15)*1000 = 66.6... ~= 67
 	LOADFONT(data.font_Regular52,game.height*7/135,Ubuntu-R.ttf);
