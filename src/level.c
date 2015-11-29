@@ -1048,10 +1048,14 @@ void level_draw() {
 	}
 	
 	//desenha os balões de info
-	if (mapTempo > .75) {
-		drawMapPopups(mapX-mapDirX,mapY-mapDirY,easeOut(mapTempo*4-3),mapPopupTempo);
+	if (mapTempo <= 0) {
+		drawMapPopups(mapX,mapY,1,mapPopupTempo,0,0);
+	} else if (mapTempo > .75) {
+		float e = ease(mapTempo)-1;
+		drawMapPopups(mapX-mapDirX,mapY-mapDirY,easeOut(mapTempo*4-3),mapPopupTempo,mapDirX*e,mapDirY*e);
 	} else if (mapTempo < .25) {
-		drawMapPopups(mapX,mapY,easeOut(1-mapTempo*4),mapPopupTempo);
+		float e = ease(mapTempo);
+		drawMapPopups(mapX,mapY,easeOut(1-mapTempo*4),mapPopupTempo,mapDirX*e,mapDirY*e);
 	}
 	
 	//desenha setas indicando caminhos que o jogador pode fazer

@@ -50,7 +50,7 @@ void drawBox(double x,double y,double w,double h,ALLEGRO_COLOR border,ALLEGRO_CO
 
 char drawPopupLine[1024];
 
-void drawPopup(float x,float y,float w,float h,const char *str) {
+void drawPopup(float x,float y,float w,float h,float t,const char *str) {
 	drawBox(x,y,w,h,al_map_rgb(153,153,153),al_map_rgb(230,230,230));
 	int l = 1;
 	int o;
@@ -59,13 +59,16 @@ void drawPopup(float x,float y,float w,float h,const char *str) {
 	}
 	int height = al_get_font_line_height(data.font_Regular37);
 	float cx = dx(x);
-	float cy = dy(y)-height*l/2-.5;
+	float cy = dy(y)-height*.5-.5;
+	height = (int)(height*t);
+	cy -= height*(l-1)/2;
 	if (l == 1) {
 		al_draw_text(data.font_Regular37,COLOR_TEXT,cx,cy,ALLEGRO_ALIGN_CENTRE,str);
 		return;
 	}
 	o = 0;
 	int b = 0;
+	//isso é meio overkill mas pelo menos assim dá pra escrever textos com várias linhas
 	while (1) {
 		if (str[o] == '\0') {
 			drawPopupLine[b] = '\0';

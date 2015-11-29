@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="18" tilewidth="32" tileheight="32" nextobjectid="5">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="18" tilewidth="32" tileheight="32" nextobjectid="6">
  <tileset firstgid="1" name="tilesetCollision" tilewidth="32" tileheight="32" tilecount="6">
   <image source="../bitmaps/tilesetCollision.png" width="192" height="32"/>
  </tileset>
@@ -95,11 +95,11 @@
 </data>
  </layer>
  <objectgroup name="wires">
-  <object id="2" x="0" y="416">
-   <polyline points="0,0 64,0 64,-96 128,-96"/>
-  </object>
   <object id="4" x="896" y="416">
    <polyline points="0,0 0,64 128,64"/>
+  </object>
+  <object id="5" x="128" y="320">
+   <polyline points="0,0 -128,0"/>
   </object>
  </objectgroup>
 </map>

@@ -9,15 +9,23 @@
 #include "sxmlc.h"
 #include "draw.h"
 
-void drawMapPopups(int x,int y,float t,float p) {
+float dt,dox,doy;
+void dpp(float x0,float y0,float x1,float y1,const char *str) {
+	//recebe (x,y) de início e (x,y) de fim, em tiles
+	drawPopup((x1+x0+1)/(2*mapWidth)+dox,(y1+y0+1)/(2*mapHeight)+doy,(x1-x0+1)/mapWidth,dt*(y1-y0+1)/mapHeight,dt,str);
+}
+
+void drawMapPopups(int x,int y,float t,float p,float ox,float oy) {
+	dt = t;
+	dox = ox;
+	doy = sinf(p)*.003+oy;
 	int index = mapGrid[y*mapGridWidth+x];
-	p = sinf(p)*.003;
 	//index diz o valor numérico do mapa (indicado pelo índice do path no mapList em map.h)
 	if (index == 1) {
 		//exemplo de texto, extremamente sujeito a alterações
-		drawPopup(.2,.3+p,.2,.15*t,"pressione enter\npara abrir a\ncaixa de texto.");
-		drawPopup(.5,.3+p,.2,.15*t,"digite nela\numa função\nconstante!");
-		drawPopup(.8,.3+p,.2,.15*t,"nela, o valor\nde x não afeta\no resultado.");
+		dpp(5,4,10,6,"pressione enter\npara abrir a\ncaixa de texto.");
+		dpp(13,4,18,6,"digite uma\nfunção constante!");
+		dpp(21,4,26,6,"nela, para qualquer\nvalor de x, o\nf(x) é o mesmo.");
 	}
 }
 

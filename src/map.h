@@ -13,27 +13,30 @@ static const char *mapList[] = {
 	"data/levels/cenario02b.tmx",
 	"data/levels/cenario03.tmx",
 	"data/levels/cenario04.tmx",
+	"data/levels/cenario05.tmx",
+	"data/levels/cenario06.tmx",
 	"data/levels/Reccenario01.tmx",
 	"data/levels/Reccenario02.tmx",
 };
 
 //e aqui a ordem na qual eles são carregados
 //o número indicando o índice dele no array de cima
-static const int mapGridWidth = 6;
+static const int mapGridWidth = 7;
 static const int mapGrid[] = {
-	0,0,0,5,6,7,
-	1,2,3,4,0,0
+	0,0,0,0,7,8,9,
+	0,0,0,5,6,0,0,
+	1,2,3,4,0,0,0,
 };
 
 //aqui indica-se o mapa a ser lido de primeira, na grade acima
 static const int mapStartX = 0;
-static const int mapStartY = 1;
+static const int mapStartY = 2;
 
 //e aqui indica-se o índice da base na qual o jogador se encontrará
 static const int mapStartBase = 0;
 
 //a função pra escrever o texto de cada mapa
-void drawMapPopups(int x,int y,float t,float p);
+void drawMapPopups(int x,int y,float t,float p,float ox,float oy);
 
 static const int tilemapWidth = 32; //largura do tilemapHq.png, em tiles
 static const int tilemapHeight = 8; //altura do tilemapHq.png, em tiles
