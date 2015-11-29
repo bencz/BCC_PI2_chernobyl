@@ -81,6 +81,7 @@ float wireLength; //comprimento de tal parte
 
 float mapTempo; //animação de transição entre mapas
 int mapDirX,mapDirY; //direção da animação
+float mapPopupTempo; //tempo da animação dos balões
 
 float weightRegular,weightThin,weightThick; //grossuras para desenhar linhas
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
@@ -612,6 +613,8 @@ bool level_start() {
 	wireIndex = 0;
 	wireProgress = 0;
 	
+	mapPopupTempo = 0;
+	
 	textboxPos = 1;
 	textboxPosTempo = 1;
 	textboxSizeTempo = 0;
@@ -680,9 +683,6 @@ void level_update() {
 			startPause(true);
 			return;
 		}
-		//if (input.escape->press) {
-		//	sceneLoad(MENU);
-		//}
 		if (input.tab->press && wireTempo == 0) {
 			setDir(-functionDir);
 		}
@@ -967,6 +967,10 @@ void level_update() {
 		while (wireKeysTempo >= 1) wireKeysTempo--;
 	}
 	
+	//animação dos balões
+	mapPopupTempo += game.delta*3;
+	while (mapPopupTempo >= 6.2831853) mapPopupTempo -= 6.2831853;
+	
 	//textbox
 	if (input.captureText) {
 		if (textboxSizeTempo < 1) {
@@ -1027,6 +1031,7 @@ void level_draw() {
 		drawTileset(currentMap->front,0,0,0,1,0,1);
 	}
 	
+	//desenha debug de colisão, como a bounding box do jogador e por onde ela passa
 	if (debugCollision) {
 		BLENDALPHA();
 		for (int t,x,y = 0; y < mapHeight; y++) {
@@ -1040,6 +1045,13 @@ void level_draw() {
 			}
 		}
 		BLENDDEFAULT();
+	}
+	
+	//desenha os balões de info
+	if (mapTempo > .75) {
+		drawMapPopups(mapX-mapDirX,mapY-mapDirY,easeOut(mapTempo*4-3),mapPopupTempo);
+	} else if (mapTempo < .25) {
+		drawMapPopups(mapX,mapY,easeOut(1-mapTempo*4),mapPopupTempo);
 	}
 	
 	//desenha setas indicando caminhos que o jogador pode fazer

@@ -7,6 +7,19 @@
 #include "game.h"
 #include "map.h"
 #include "sxmlc.h"
+#include "draw.h"
+
+void drawMapPopups(int x,int y,float t,float p) {
+	int index = mapGrid[y*mapGridWidth+x];
+	p = sinf(p)*.003;
+	//index diz o valor num√©rico do mapa (indicado pelo √≠ndice do path no mapList em map.h)
+	if (index == 1) {
+		//exemplo de texto, extremamente sujeito a altera√ß√µes
+		drawPopup(.2,.3+p,.2,.15*t,"pressione enter\npara abrir a\ncaixa de texto.");
+		drawPopup(.5,.3+p,.2,.15*t,"digite nela\numa fun√ß√£o\nconstante!");
+		drawPopup(.8,.3+p,.2,.15*t,"nela, o valor\nde x n√£o afeta\no resultado.");
+	}
+}
 
 void setTile(int t[mapTotal],int x,int y,int v) {
 	t[x+y*mapWidth] = v;
@@ -177,7 +190,7 @@ void freeMapFull(TMap *map) {
 }
 
 int getWireIndex(const TMap *map,const TWire *wire) {
-	//fiz essa funÁ„o sÛ por causa do debugMap mesmo
+	//fiz essa fun√ß√£o s√≥ por causa do debugMap mesmo
 	for (int a = 0; a < map->wiresN; a++) {
 		if (&map->wires[a] == wire) return a;
 	}
@@ -206,12 +219,12 @@ void debugMap(const TMap *map) {
 
 //vars pra leitura do xml
 TMap *mapr; //mapa sendo lido
-int tc; //Ìndice marcando o inÌcio da id de colis„o
-int tt; //Ìndice marcando o inÌcio da id do tilemap normal
+int tc; //√≠ndice marcando o in√≠cio da id de colis√£o
+int tt; //√≠ndice marcando o in√≠cio da id do tilemap normal
 int *tm; //ptr pra uma matriz de tiles
-int tmm; //indica se È para varrer tiles no prÛximo texto
-int tr; //n˙mero de cabos alocado
-int tox,toy; //posiÁ„o do objeto atual
+int tmm; //indica se √© para varrer tiles no pr√≥ximo texto
+int tr; //n√∫mero de cabos alocado
+int tox,toy; //posi√ß√£o do objeto atual
 
 int parseInt(char *s) {
 	int r = 0;

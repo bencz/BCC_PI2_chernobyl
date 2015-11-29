@@ -32,6 +32,9 @@ static const int mapStartY = 1;
 //e aqui indica-se o índice da base na qual o jogador se encontrará
 static const int mapStartBase = 0;
 
+//a função pra escrever o texto de cada mapa
+void drawMapPopups(int x,int y,float t,float p);
+
 static const int tilemapWidth = 32; //largura do tilemapHq.png, em tiles
 static const int tilemapHeight = 8; //altura do tilemapHq.png, em tiles
 

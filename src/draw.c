@@ -48,6 +48,42 @@ void drawBox(double x,double y,double w,double h,ALLEGRO_COLOR border,ALLEGRO_CO
 	al_draw_filled_rectangle(x0+b,y0+b,x1-b,y1-b,al_map_rgb(255,255,255));
 }
 
+char drawPopupLine[1024];
+
+void drawPopup(float x,float y,float w,float h,const char *str) {
+	drawBox(x,y,w,h,al_map_rgb(153,153,153),al_map_rgb(230,230,230));
+	int l = 1;
+	int o;
+	for (o = 0; str[o] != '\0'; o++) {
+		if (str[o] == '\n') l++;
+	}
+	int height = al_get_font_line_height(data.font_Regular37);
+	float cx = dx(x);
+	float cy = dy(y)-height*l/2-.5;
+	if (l == 1) {
+		al_draw_text(data.font_Regular37,COLOR_TEXT,cx,cy,ALLEGRO_ALIGN_CENTRE,str);
+		return;
+	}
+	o = 0;
+	int b = 0;
+	while (1) {
+		if (str[o] == '\0') {
+			drawPopupLine[b] = '\0';
+			al_draw_text(data.font_Regular37,COLOR_TEXT,cx,cy,ALLEGRO_ALIGN_CENTRE,drawPopupLine);
+			break;
+		}
+		if (str[o] == '\n') {
+			drawPopupLine[b] = '\0';
+			al_draw_text(data.font_Regular37,COLOR_TEXT,cx,cy,ALLEGRO_ALIGN_CENTRE,drawPopupLine);
+			o++;
+			b = 0;
+			cy += height;
+		} else {
+			drawPopupLine[b++] = str[o++];
+		}
+	}
+}
+
 void drawCorner(int x,int y,double l,float h,ALLEGRO_COLOR border,ALLEGRO_COLOR border2) {
 	int xa,xb,ya,yb;
 	if (x >= 1) {

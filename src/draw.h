@@ -26,6 +26,9 @@ double iy(int y);
 //desenha caixinha com a cor de borda desejada
 void drawBox(double x,double y,double w,double h,ALLEGRO_COLOR border,ALLEGRO_COLOR border2);
 
+//que nem o drawBox mas específico pra texto
+void drawPopup(float x,float y,float w,float h,const char *str);
+
 //que nem o drawBox mas pra desenhar os menus de canto
 //x e y podem ser 0 ou 1, respectivamente esquerda/topo ou direita/baixo
 void drawCorner(int x,int y,double l,float h,ALLEGRO_COLOR border,ALLEGRO_COLOR border2);
