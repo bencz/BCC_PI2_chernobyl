@@ -309,7 +309,7 @@ int loadMapStart(const XMLNode *node,SAX_Data *sd) {
 				int x = 0;
 				int y = 0;
 				int r = 0;
-				int n = 0;
+				int n = 1;
 				while (1) {
 					if (s[o] == ',') {
 						x = (r*n+tox)/32;

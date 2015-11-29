@@ -412,12 +412,6 @@ void drawTileset(int* tileset,float ox,float oy,float mx,float Mx,float my,float
 }
 
 void drawPlayer(float ox,float oy) {
-	/*
-	if (wireTempo == 1) {
-		al_draw_filled_circle(px(ox+playerSpriteX*scaleX),py(oy+playerSpriteY*scaleY),weightThick*1.5f,al_map_rgb(0,255,0));
-		return;
-	}
-	*/
 	if (!(respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)&1)) {
 		int cx,cy; //número de frames na imagem, na horizontal e na vertical
 		int cf; //número de frames a serem loopados
@@ -1204,18 +1198,9 @@ void level_draw() {
 		float slide = scaleY*easeIn(wireTempo)*1.2;
 		float footerY = py(.95+slide);
 		float recWidth = 1.0/game.width;
-		drawCorner(0,1,footerLeftWidth,0,al_map_rgb(246,87,75),al_map_rgb(252,215,172));
+		drawCorner(0,1,footerLeftWidth,slide,al_map_rgb(246,87,75),al_map_rgb(252,215,172));
 		float nx;
 		if (errorMsgShow) {
-			/*
-			al_draw_filled_triangle(
-				px(.009),py(.165+footerHeight),
-				px(.031),py(.165+footerHeight),
-				px(.02),py(.125+footerHeight),
-				al_map_rgb(255,204,15)
-			);
-			al_draw_text(data.font_Regular37,COLOR_TEXT,px(.02),py(.127+footerHeight),ALLEGRO_ALIGN_CENTRE,"!");
-			*/
 			nx = al_get_text_width(data.font_Regular37,mensagensDeErro[errorMsg])*recWidth+.01;
 			al_draw_text(data.font_Regular37,COLOR_TEXT,px(.01+footerLeftWidth-nx),footerY,ALLEGRO_ALIGN_LEFT,mensagensDeErro[errorMsg]);
 		} else {

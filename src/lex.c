@@ -106,11 +106,15 @@ unsigned char* concat(unsigned char *s1, unsigned char *s2)
 char *funcs[] =
 {
 	"sin",
+	"sen",
 	"cos",
 	"tan",
+	"tg",
 	"asin",
+	"asen",
 	"acos",
 	"atan",
+	"atg",
 	"exp",
 	"ln",
 	"log",

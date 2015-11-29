@@ -83,11 +83,15 @@ VARIAVEL constantes[] =
 FUNCAO funcoes[] =
 {
     { "sin",     1,    sin },
+    { "sen",     1,    sin },
     { "cos",     1,    cos },
     { "tan",     1,    tan },
+    { "tg",      1,    tan },
     { "asin",    1,    asin },
+    { "asen",    1,    asin },
     { "acos",    1,    acos },
     { "atan",    1,    atan },
+    { "atg",     1,    atan },
     { "exp",     1,    exp },
     { "ln",      1,    ln_p },
     { "log",     1,    log_p },
