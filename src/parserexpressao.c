@@ -457,15 +457,33 @@ char *_strlwr(char *str)
 
 int isnan_d(double d)
 {
-    const uint64_t u = *(uint64_t*)&d;
-    return (u&0x7FF0000000000000ULL) == 0x7FF0000000000000ULL && (u&0xFFFFFFFFFFFFFULL);
+    //const uint64_t u = *(uint64_t*)&d;
+    //return (u&0x7FF0000000000000ULL) == 0x7FF0000000000000ULL && (u&0xFFFFFFFFFFFFFULL);
+    int hx,lx;
+    hx = (__HI(d)&0x7fffffff);
+    lx = __LO(d);
+    hx |= (unsigned)(lx|(-lx))>>31;
+    hx = 0x7ff00000 - hx;
+    return ((unsigned)(hx))>>31;
+}
+
+/*int isinf_d(double d)
+{
+	int hx;
+	hx = __HI(d);
+	return  (unsigned)((hx & 0x7fffffff) - 0x7ff00000) >> 31;
+}*/
+
+int isinf_d(double d)
+{
+	return isinf(d);
 }
 
 int calcula(char *expr, double *resultado, int *flag)
 {
     if (setjmp(jb))
         return ERRO;
-		
+
     expressao = expr;
     ERANC = expr;
     _strlwr(expressao);
@@ -476,6 +494,8 @@ int calcula(char *expr, double *resultado, int *flag)
     *flag = level1(resultado);
 	if(isnan_d(*resultado))
 		return E_NAN;
-	
+	if (isinf_d(*resultado))
+		return E_INF;
+
     return E_OK;
 }

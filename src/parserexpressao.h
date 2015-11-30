@@ -1,6 +1,18 @@
 #ifndef __PARSEREXPRESSAO_H__
 #define __PARSEREXPRESSAO_H__
 
+#ifdef __LITTLE_ENDIAN
+#define __HI(x) *(1+(int*)&x)
+#define __LO(x) *(int*)&x
+#define __HIp(x) *(1+(int*)x)
+#define __LOp(x) *(int*)x
+#else
+#define __HI(x) *(int*)&x
+#define __LO(x) *(1+(int*)&x)
+#define __HIp(x) *(int*)x
+#define __LOp(x) *(1+(int*)x)
+#endif
+
 // Codigos que são retornados pelo sistema de calculo 
 #define E_OK            0     // Calculo feito com sucesso 
 #define E_SYNTAX        1     // Erro se sintaxe 
@@ -16,6 +28,7 @@
 #define E_LOGINV	   11     // Erro para log menor ou igual à zero
 #define E_LNINV        12     // Erro para ln menor ou igual à zero
 #define E_NAN          13     // Not a Number	
+#define E_INF		   13     // Infinito
 
 static const char* mensagensDeErro[] =
 {

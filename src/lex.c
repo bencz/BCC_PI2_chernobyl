@@ -184,14 +184,17 @@ int processaexpressao(unsigned char *expr, int i)
 		else if ((token[i + 1] != NULL && token[i - 1] != NULL) &&
 				 (isdigit(token[i + 1][0]) && isalpha(token[i][0]) && token[i - 1][0] == '-'))
 		{
+			// -x2
 			expt = concat(expt, "(");
 			expt = concat(expt, token[i]);
 			expt = concat(expt, "^");
-			unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
-			i = (processaexpressao(tmp, i + 1)) - 1;
-			expt = concat(expt, tmp);
+			expt = concat(expt, token[i+1]);
+//			unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
+//			i = (processaexpressao(tmp, i + 1)) - 1;
+//			expt = concat(expt, tmp);
 			expt = concat(expt, ")");
-			free(tmp);
+			i += 1;
+//			free(tmp);
 			continue;
 		}
 		else if ((token[i + 1] != NULL && token[i - 1] != NULL) &&
@@ -200,7 +203,8 @@ int processaexpressao(unsigned char *expr, int i)
 			expt = concat(expt, "(");
 			expt = concat(expt, token[i]);
 			expt = concat(expt, token[i + 1]);
-			if (token[i + 2] != NULL && (token[i + 2][0] == '('))
+			i += 1;
+			/*if (token[i + 2] != NULL && (token[i + 2][0] == '('))
 			{
 				unsigned char *tmp = calloc(sizeof(unsigned char), LINESIZE);
 				i = (processaexpressao(tmp, i + 2)) - 1;
@@ -209,11 +213,14 @@ int processaexpressao(unsigned char *expr, int i)
 				free(tmp);
 				continue;
 			}
-			else
+			else*/ if(expt, token[i + 1] != NULL)
 			{
-				expt = concat(expt, token[i + 2]);
+				expt = concat(expt, token[i + 1]);
+				i += 1;
+				if (token[i + 1] != NULL && (isdigit(token[i + 1][0])))
+					expt = concat(expt, token[i + 1]);
 				expt = concat(expt, ")");
-				i += 2;
+				i += 1;
 				ante = token[i];
 				continue;
 			}
@@ -226,8 +233,10 @@ int processaexpressao(unsigned char *expr, int i)
 	memcpy(expr, expt, strlen(expt));
 	free(expt);
 	free(ante);
+
 #ifdef _WIN32
-	free(token);
+	//free(token);
+	memset(token, '\0', NTOKEN);
 #elif __linux__
 	memset(token, '\0', NTOKEN);
 #endif
