@@ -18,7 +18,7 @@
 
 //cena a ser carregada de primeira
 //o padrão é MENU, mas se precisar só mudar
-#define FSCENE LEVEL
+#define FSCENE MENU
 
 bool loadFonts() {
 	//o número na direita indica o tamanho da fonte.
@@ -40,11 +40,16 @@ void unloadFonts() {
 
 bool load() {
 	LOADBITMAP(data.bitmap_keys,keys.png);
+	LOADBITMAP(data.bitmap_parallax1,parallax1.png);
+	LOADBITMAP(data.bitmap_playerMenu,playerMenu.png);
+	LOADSAMPLE(data.sample_playerMoan,playerMoan.ogg);
 	return true;
 }
 
 void unload() {
 	UNLOADBITMAP(data.bitmap_keys);
+	UNLOADBITMAP(data.bitmap_parallax1);
+	UNLOADBITMAP(data.bitmap_playerMenu);
 }
 
 bool start() {
@@ -66,6 +71,8 @@ bool start() {
 }
 
 bool update() {
+	srand(time(NULL));
+	
 	//verifica as transições
 	bool sceneLoaded = false;
 	if (scene.tempo > 0) {
@@ -242,12 +249,24 @@ int main(int argc,char **args) {
 		fprintf(stderr,"erro: o teclado não pôde ser inicializado\n");
 		return -1;
 	}
+	if (!al_install_audio()) {
+		fprintf(stderr,"erro: o áudio não pôde ser inicializado\n");
+		return -1;
+	}
+	if (!al_reserve_samples(16)) {
+		fprintf(stderr,"erro: o áudio não pôde ser configurado\n");
+		return -1;
+	}
 	if (!al_init_primitives_addon()) {
 		fprintf(stderr,"erro: o addon primitives não pôde ser inicializado\n");
 		return -1;
 	}
 	if (!al_init_image_addon()) {
 		fprintf(stderr,"erro: o addon image não pôde ser inicializado\n");
+		return -1;
+	}
+	if (!al_init_acodec_addon()) {
+		fprintf(stderr,"erro: o addon acodec não pôde ser inicializado\n");
 		return -1;
 	}
 	al_init_font_addon();
@@ -332,6 +351,7 @@ int main(int argc,char **args) {
 	(*scene.unload)();
 	unload();
 	unloadFonts();
+	al_uninstall_audio();
 	al_destroy_timer(game.timer);
 	al_destroy_display(game.display);
 	al_destroy_event_queue(game.eventQueue);

@@ -6,6 +6,7 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_font.h>
+#include <allegro5/allegro_audio.h>
 
 #define LOADBITMAP(NAME,PATH) \
 	al_set_path_filename(game.path,"data/bitmaps/" #PATH); \
@@ -28,6 +29,14 @@
 
 #define UNLOADFONT(NAME) \
 	if (NAME) al_destroy_font(NAME)
+
+#define LOADSAMPLE(NAME,PATH) \
+	al_set_path_filename(game.path,"data/audio/" #PATH); \
+	NAME = al_load_sample(al_path_cstr(game.path,'/')); \
+	if (!NAME) { \
+		fprintf(stderr,"erro: não foi possível carregar o áudio em data/audio/" #PATH "\n"); \
+		return false; \
+	}
 
 #define COLOR_TEXT al_map_rgb(51,51,51)
 #define COLOR_HGHL al_map_rgb(52,155,52)
@@ -64,11 +73,16 @@ struct Data {
 	ALLEGRO_BITMAP *bitmap_playerTravel;
 	ALLEGRO_BITMAP *bitmap_playerBall;
 	ALLEGRO_BITMAP *bitmap_playerDying;
+	ALLEGRO_BITMAP *bitmap_playerMenu;
 	ALLEGRO_BITMAP *bitmap_tileset;
 	ALLEGRO_BITMAP *bitmap_parallax0;
 	ALLEGRO_BITMAP *bitmap_parallax1;
 	ALLEGRO_BITMAP *bitmap_parallax2;
 	ALLEGRO_BITMAP *bitmap_keys;
+	ALLEGRO_BITMAP *bitmap_logo;
+	
+	//áudio
+	ALLEGRO_SAMPLE *sample_playerMoan;
 	
 } data;
 

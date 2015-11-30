@@ -641,7 +641,6 @@ bool level_load() {
 	LOADBITMAP(data.bitmap_playerDying,playerDying.png);
 	LOADBITMAP(data.bitmap_tileset,tilesetHq.png);
 	LOADBITMAP(data.bitmap_parallax0,parallax0.png);
-	LOADBITMAP(data.bitmap_parallax1,parallax1.png);
 	LOADBITMAP(data.bitmap_parallax2,parallax2.png);
 	return true;
 }
@@ -654,7 +653,6 @@ void level_unload() {
 	UNLOADBITMAP(data.bitmap_playerDying);
 	UNLOADBITMAP(data.bitmap_tileset);
 	UNLOADBITMAP(data.bitmap_parallax0);
-	UNLOADBITMAP(data.bitmap_parallax1);
 	UNLOADBITMAP(data.bitmap_parallax2);
 	if (currentMap != NULL) {
 		freeMapFull(currentMap);
@@ -911,6 +909,7 @@ void level_update() {
 			float ny = getValueOnCache(playerX-(currentBase->x),&p);
 			if (!p) {
 				dead = true;
+				al_play_sample(data.sample_playerMoan,game.volumeSfx,0,lerp(.9,1.1,(rand()%32)/32.),ALLEGRO_PLAYMODE_ONCE,NULL);
 				respawnTempo = 2.5;
 			} else {
 				playerY = zeroHeight-ny+(currentBase->y);
@@ -925,6 +924,7 @@ void level_update() {
 					if (playerSpriteY < 0) playerSpriteY = 0;
 					if (playerSpriteY > 16) playerSpriteY = 16;
 					dead = true;
+					al_play_sample(data.sample_playerMoan,game.volumeSfx,0,lerp(.9,1.1,(rand()%32)/32.),ALLEGRO_PLAYMODE_ONCE,NULL);
 					respawnTempo = 2.5;
 				} else if (collision == 2) {
 					setBase(getBase(x,y));

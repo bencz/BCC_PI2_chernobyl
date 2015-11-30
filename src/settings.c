@@ -18,6 +18,7 @@ int selection;
 bool confirm;
 float confirmTempo;
 int selection2;
+float animTempo;
 
 void startPause(bool ingame) {
 	unpausing = false;
@@ -25,6 +26,7 @@ void startPause(bool ingame) {
 	pauseTempo = 0;
 	selection = ingame?-1:0;
 	confirmTempo = 0;
+	animTempo = 0;
 }
 
 void updateSlider(float *value) {
@@ -56,6 +58,7 @@ void drawSlider(float y,float value,bool glow,const char *str) {
 }
 
 bool updatePause(bool ingame) {
+	animTempo += game.delta*.25;
 	if (confirm) {
 		if (confirmTempo < 1) {
 			confirmTempo += game.delta*8;
@@ -138,9 +141,27 @@ void drawPause(bool ingame) {
 		al_draw_text(data.font_Regular52,(selection == -1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.38,l)),ALLEGRO_ALIGN_CENTRE,"continuar");
 		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.62,l)),ALLEGRO_ALIGN_CENTRE,"sair ao menu");
 	} else {
-		al_draw_text(data.font_Regular52,COLOR_TEXT,px(.5),py(lerp(.5,.05,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
-		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.9,l)),ALLEGRO_ALIGN_CENTRE,"voltar");
+		drawBitmapTinted(data.bitmap_parallax1,al_map_rgb_f(1,1,.8),.5-sinf(animTempo)*.03,.5-cosf(animTempo)*.03,game.idealProp*1.1,1.1,0,0,0);
+		l = easeOut((scene.tempo > 0)?(scene.tempo):(1+scene.tempo));
+		drawBox(.5,.5,.4,.4*l,COLOR_HGHL,COLOR_SCND);
+		al_draw_text(data.font_Regular52,COLOR_TEXT,px(.5),py(lerp(.5,.315,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
+		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.62,l)),ALLEGRO_ALIGN_CENTRE,"voltar");
 	}
+	
+	BLENDALPHA();
+	if (selection > (ingame?-1:0)) {
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.5,.25,l)-fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,4,0,0,0);
+	}
+	if (selection < 2) {
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.5,.75,l)+fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,5,0,0,0);
+	}
+	if (selection < 0 || selection > 1) {
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.725+fabs(sinf(animTempo*16))*.007,.5,1./18,1./18,4,2,0,0,0,0);
+	} else {
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.275-fabs(sinf(animTempo*16))*.007,.5,1./18,1./18,4,2,6,0,0,0);
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.725+fabs(sinf(animTempo*16))*.007,.5,1./18,1./18,4,2,7,0,0,0);
+	}
+	BLENDDEFAULT();
 	
 	//sliders
 	drawSlider(lerp(.5,.46,l),game.volumeBgm,selection == 0,"volume bgm");
