@@ -83,7 +83,10 @@ struct Data {
 	ALLEGRO_BITMAP *bitmap_logo;
 	
 	//áudio
-	ALLEGRO_SAMPLE *sample_playerMoan;
+	ALLEGRO_SAMPLE *sample_bgm;
+	ALLEGRO_SAMPLE *sample_moan;
+	ALLEGRO_SAMPLE *sample_select;
+	ALLEGRO_SAMPLE *sample_select2;
 	
 } data;
 

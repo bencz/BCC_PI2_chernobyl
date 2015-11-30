@@ -42,7 +42,10 @@ bool load() {
 	LOADBITMAP(data.bitmap_keys,keys.png);
 	LOADBITMAP(data.bitmap_parallax1,parallax1.png);
 	LOADBITMAP(data.bitmap_playerMenu,playerMenu.png);
-	LOADSAMPLE(data.sample_playerMoan,playerMoan.ogg);
+	LOADSAMPLE(data.sample_bgm,bgm.ogg);
+	LOADSAMPLE(data.sample_moan,moan.ogg);
+	LOADSAMPLE(data.sample_select,select.wav);
+	LOADSAMPLE(data.sample_select2,select2.wav);
 	return true;
 }
 
@@ -53,6 +56,7 @@ void unload() {
 }
 
 bool start() {
+	srand(time(NULL));
 	al_set_window_title(game.display,"Projeto Chernobyl");
 	al_clear_to_color(al_map_rgb(0,0,0));
 	al_flip_display();
@@ -71,8 +75,6 @@ bool start() {
 }
 
 bool update() {
-	srand(time(NULL));
-	
 	//verifica as transições
 	bool sceneLoaded = false;
 	if (scene.tempo > 0) {

@@ -11,14 +11,18 @@
 #include "input.h"
 #include "game.h"
 #include "draw.h"
+#include "settings.h"
 
-float pauseTempo;
 bool unpausing;
 int selection;
 bool confirm;
 float confirmTempo;
 int selection2;
 float animTempo;
+
+void settings_sound(bool b) {
+	al_play_sample(b?data.sample_select2:data.sample_select,game.volumeSfx,0,1,ALLEGRO_PLAYMODE_ONCE,NULL);
+}
 
 void startPause(bool ingame) {
 	unpausing = false;
@@ -89,8 +93,14 @@ bool updatePause(bool ingame) {
 	}
 	if (scene.tempo <= 0) {
 		if (confirm) {
-			if (input.up->repeat && selection2 > 0) selection2--;
-			if (input.down->repeat && selection2 < 1) selection2++;
+			if (input.up->repeat && selection2 > 0) {
+				selection2--;
+				settings_sound(false);
+			}
+			if (input.down->repeat && selection2 < 1) {
+				selection2++;
+				settings_sound(false);
+			}
 			if (input.enter->press) {
 				if (selection2 == 0) {
 					unpausing = true;
@@ -99,14 +109,23 @@ bool updatePause(bool ingame) {
 				} else {
 					confirm = false;
 				}
+				settings_sound(true);
 			} else if (input.escape->press) {
 				confirm = false;
+				settings_sound(true);
 			}
 			return false;
 		}
-		if (input.up->repeat && selection > (ingame?-1:0)) selection--;
-		if (input.down->repeat && selection < 3) selection++;
+		if (input.up->repeat && selection > (ingame?-1:0)) {
+			selection--;
+			settings_sound(false);
+		}
+		if (input.down->repeat && selection < 3) {
+			selection++;
+			settings_sound(false);
+		}
 		if ((selection == (ingame?-1:3) && input.enter->press) || input.escape->press) {
+			settings_sound(true);
 			if (ingame) {
 				unpausing = true;
 				return false;
@@ -120,11 +139,13 @@ bool updatePause(bool ingame) {
 		} else if (selection == 2) {
 			if (input.enter->press) {
 				game.showPopups = !game.showPopups;
+				settings_sound(true);
 			}
 		} else if (ingame && selection == 3) {
 			if (input.enter->press) {
 				confirm = true;
 				selection2 = 1;
+				settings_sound(true);
 			}
 		}
 	}

@@ -16,6 +16,10 @@
 int selection;
 float animTempo;
 
+void menu_sound(bool b) {
+	al_play_sample(b?data.sample_select2:data.sample_select,game.volumeSfx,0,1,ALLEGRO_PLAYMODE_ONCE,NULL);
+}
+
 bool menu_load();
 void menu_unload();
 void menu_update();
@@ -48,12 +52,19 @@ void menu_unload() {
 void menu_update() {
 	if (scene.tempo <= 0) {
 		if (input.escape->press) exitGame();
-		if (input.up->repeat && selection > 0) selection--;
-		if (input.down->repeat && selection < 2) selection++;
+		if (input.up->repeat && selection > 0) {
+			selection--;
+			menu_sound(false);
+		}
+		if (input.down->repeat && selection < 2) {
+			selection++;
+			menu_sound(false);
+		}
 		if (input.enter->press) switch (selection) {
 			case 0: sceneLoad(LEVEL);
 			case 1: sceneLoad(SETTINGS);
 			default: exitGame();
+			menu_sound(true);
 		}
 	}
 	animTempo += game.delta*.25;

@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+float pauseTempo;
+
 void startPause(bool ingame);
 bool updatePause(bool ingame);
 void drawPause(bool ingame);

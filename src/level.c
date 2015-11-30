@@ -86,6 +86,8 @@ float mapPopupTempo; //tempo da animação dos balões
 float weightRegular,weightThin,weightThick; //grossuras para desenhar linhas
 char textboxChar[2] = {'\0','\0'}; //usado para desenhar cada glifo do input
 
+ALLEGRO_SAMPLE_INSTANCE *bgm; //música de fundo
+
 //mantenho a variável 'lextemp' alocada diretamente no código (um array)
 unsigned char lextemp[2048];
 
@@ -636,6 +638,11 @@ bool level_start() {
 }
 
 bool level_load() {
+	bgm = al_create_sample_instance(data.sample_bgm);
+	al_set_sample_instance_gain(bgm,game.volumeBgm);
+	al_set_sample_instance_playmode(bgm,ALLEGRO_PLAYMODE_LOOP);
+	al_attach_sample_instance_to_mixer(bgm,al_get_default_mixer());
+	al_play_sample_instance(bgm);
 	LOADBITMAP(data.bitmap_playerIdle,playerIdle.png);
 	LOADBITMAP(data.bitmap_playerWatch,playerWatch.png);
 	LOADBITMAP(data.bitmap_playerTravel,playerTravel.png);
@@ -648,6 +655,7 @@ bool level_load() {
 }
 
 void level_unload() {
+	al_destroy_sample_instance(bgm);
 	UNLOADBITMAP(data.bitmap_playerIdle);
 	UNLOADBITMAP(data.bitmap_playerWatch);
 	UNLOADBITMAP(data.bitmap_playerTravel);
@@ -667,6 +675,9 @@ void level_unload() {
 }
 
 void level_update() {
+	//bgm
+	al_set_sample_instance_gain(bgm,game.volumeBgm*lerp(1,.5,pauseTempo)*((scene.tempo > 0)?(scene.tempo):1));
+	
 	//pause
 	if (paused) {
 		if (updatePause(true)) {
@@ -911,7 +922,7 @@ void level_update() {
 			float ny = getValueOnCache(playerX-(currentBase->x),&p);
 			if (!p) {
 				dead = true;
-				al_play_sample(data.sample_playerMoan,game.volumeSfx,0,lerp(.9,1.1,(rand()%32)/32.),ALLEGRO_PLAYMODE_ONCE,NULL);
+				al_play_sample(data.sample_moan,game.volumeSfx*1.5,0,lerp(.9,1.1,(rand()%32)/32.),ALLEGRO_PLAYMODE_ONCE,NULL);
 				respawnTempo = 2.5;
 			} else {
 				playerY = zeroHeight-ny+(currentBase->y);
@@ -926,7 +937,7 @@ void level_update() {
 					if (playerSpriteY < 0) playerSpriteY = 0;
 					if (playerSpriteY > 16) playerSpriteY = 16;
 					dead = true;
-					al_play_sample(data.sample_playerMoan,game.volumeSfx,0,lerp(.9,1.1,(rand()%32)/32.),ALLEGRO_PLAYMODE_ONCE,NULL);
+					al_play_sample(data.sample_moan,game.volumeSfx*1.5,0,lerp(.9,1.1,(rand()%32)/32.),ALLEGRO_PLAYMODE_ONCE,NULL);
 					respawnTempo = 2.5;
 				} else if (collision == 2) {
 					setBase(getBase(x,y));
