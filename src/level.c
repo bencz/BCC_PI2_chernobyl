@@ -412,7 +412,7 @@ void drawTileset(int* tileset,float ox,float oy,float mx,float Mx,float my,float
 	}
 }
 
-void drawPlayer(float ox,float oy) {
+void drawPlayer(float ox,float oy,bool isEnd) {
 	if (!(respawnTempo > .5 && respawnTempo <= 1.75 && (int)ceilf(respawnTempo*8)&1)) {
 		int cx,cy; //número de frames na imagem, na horizontal e na vertical
 		int cf; //número de frames a serem loopados
@@ -439,7 +439,7 @@ void drawPlayer(float ox,float oy) {
 			playerSequence = 0;
 		}
 		switch (playerSequence) {
-			case 0: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerIdle; break;
+			case 0: cx = 10; cy = 1; cf = 10; cv = 10; bm = isEnd?data.bitmap_playerMenu:data.bitmap_playerIdle; break;
 			case 1: cx = 10; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerWatch; break;
 			case 2: cx = 15; cy = 1; cf = 10; cv = 10; bm = data.bitmap_playerTravel; break;
 			case 3: cx = 15; cy = 1; cf = 10; cv = 40; bm = data.bitmap_playerBall; break;
@@ -522,7 +522,8 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 		float x1 = clamp(ox+1,0,1);
 		float y0 = clamp(oy,0,1);
 		float y1 = clamp(oy+1,0,1);
-		drawBitmapRegion(par,
+		ALLEGRO_COLOR color = (map->index == 12)?al_map_rgb_f(1,.7,.9):al_map_rgb_f(1,1,1);
+		drawBitmapRegionTinted(par,color,
 			lerp(x0,clamp(-ox,0,1),parallaxIntensity),
 			lerp(y0,clamp(-oy,0,1),parallaxIntensity),
 			x1-x0,y1-y0,x0,y0,(x1-x0)*game.idealProp,y1-y0,-1,-1,0
@@ -533,6 +534,7 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 	drawTileset(map->back,ox,oy,mx,Mx,my,My);
 	
 	//desenha os circuitos
+	ALLEGRO_COLOR wireColor = (map->index == 12)?al_map_rgb(204,0,102):al_map_rgb(0,204,0);
 	for (int a = 0; a < map->wiresN; a++) {
 		int2 *i = map->wires[a].nodes;
 		int2 *j = map->wires[a].nodes+1;
@@ -540,10 +542,10 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 			al_draw_line(
 				px(ox+(i->x)*scaleX),py(oy+(i->y)*scaleY),
 				px(ox+(j->x)*scaleX),py(oy+(j->y)*scaleY),
-				al_map_rgb(0,204,0),weightThick
+				wireColor,weightThick
 			);
 			if (b > 1) {
-				al_draw_filled_circle(px(ox+(i->x)*scaleX),py(oy+(i->y)*scaleY),weightThick*.5f,al_map_rgb(0,204,0));
+				al_draw_filled_circle(px(ox+(i->x)*scaleX),py(oy+(i->y)*scaleY),weightThick*.5f,wireColor);
 			}
 			i++;
 			j++;
@@ -551,7 +553,7 @@ void drawMap(TMap *map,float ox,float oy,bool p) {
 	}
 	
 	//desenha o guri
-	if (p) drawPlayer(ox,oy);
+	if (p) drawPlayer(ox,oy,map->index == 12);
 }
 
 //
@@ -1048,14 +1050,16 @@ void level_draw() {
 	}
 	
 	//desenha os balões de info
-	if (mapTempo <= 0) {
-		drawMapPopups(mapX,mapY,1,mapPopupTempo,0,0);
-	} else if (mapTempo > .75) {
-		float e = ease(mapTempo)-1;
-		drawMapPopups(mapX-mapDirX,mapY-mapDirY,easeOut(mapTempo*4-3),mapPopupTempo,mapDirX*e,mapDirY*e);
-	} else if (mapTempo < .25) {
-		float e = ease(mapTempo);
-		drawMapPopups(mapX,mapY,easeOut(1-mapTempo*4),mapPopupTempo,mapDirX*e,mapDirY*e);
+	if (game.showPopups) {
+		if (mapTempo <= 0) {
+			drawMapPopups(mapX,mapY,1,mapPopupTempo,0,0);
+		} else if (mapTempo > .75) {
+			float e = ease(mapTempo)-1;
+			drawMapPopups(mapX-mapDirX,mapY-mapDirY,easeOut(mapTempo*4-3),mapPopupTempo,mapDirX*e,mapDirY*e);
+		} else if (mapTempo < .25) {
+			float e = ease(mapTempo);
+			drawMapPopups(mapX,mapY,easeOut(1-mapTempo*4),mapPopupTempo,mapDirX*e,mapDirY*e);
+		}
 	}
 	
 	//desenha setas indicando caminhos que o jogador pode fazer

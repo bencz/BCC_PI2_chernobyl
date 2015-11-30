@@ -3,8 +3,8 @@
  <tileset firstgid="1" name="tilesetCollision" tilewidth="32" tileheight="32" tilecount="6">
   <image source="../bitmaps/tilesetCollision.png" width="192" height="32"/>
  </tileset>
- <tileset firstgid="7" name="tileset" tilewidth="32" tileheight="32" tilecount="2528">
-  <image source="../bitmaps/tileset.png" width="1024" height="2528"/>
+ <tileset firstgid="7" name="tileset" tilewidth="32" tileheight="32" tilecount="2560">
+  <image source="../bitmaps/tileset.png" width="1024" height="1984"/>
  </tileset>
  <layer name="parallax" width="32" height="18">
   <data encoding="csv">

@@ -17,20 +17,25 @@ static const char *mapList[] = {
 	"data/levels/cenario06.tmx",
 	"data/levels/Reccenario01.tmx",
 	"data/levels/Reccenario02.tmx",
+	"data/levels/boss01.tmx",
+	"data/levels/boss02.tmx",
+	"data/levels/end.tmx",
 };
 
 //e aqui a ordem na qual eles são carregados
 //o número indicando o índice dele no array de cima
-static const int mapGridWidth = 7;
+static const int mapGridWidth = 8;
 static const int mapGrid[] = {
-	0,0,0,0,7,8,9,
-	0,0,0,5,6,0,0,
-	1,2,3,4,0,0,0,
+	0,0,0,0,0,0,0,12,
+	0,0,0,0,0,0,0,11,
+	0,0,0,0,7,8,9,10,
+	0,0,0,5,6,0,0,0,
+	1,2,3,4,0,0,0,0,
 };
 
 //aqui indica-se o mapa a ser lido de primeira, na grade acima
 static const int mapStartX = 0;
-static const int mapStartY = 2;
+static const int mapStartY = 4;
 
 //e aqui indica-se o índice da base na qual o jogador se encontrará
 static const int mapStartBase = 0;
@@ -64,6 +69,8 @@ typedef struct {
 } TBase;
 
 typedef struct {
+	int index; //índice do mapa na lista
+	
 	int *collision; //matriz de colisão
 	int *front; //matriz dos sprites na frente do personagem
 	int *back; //matriz dos sprites atrás do personagem

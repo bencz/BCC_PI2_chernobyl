@@ -232,9 +232,10 @@ int main(int argc,char **args) {
 	game.fps = 60;
 	game.delta = 1.0/game.fps;
 	
-	//volume
+	//configurações
 	game.volumeBgm = 1;
 	game.volumeSfx = 1;
+	game.showPopups = true;
 	
 	//inicia tudo q o allegro precisa pra iniciar
 	if (!al_init()) {

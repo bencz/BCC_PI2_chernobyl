@@ -22,10 +22,25 @@ void drawMapPopups(int x,int y,float t,float p,float ox,float oy) {
 	int index = mapGrid[y*mapGridWidth+x];
 	//index diz o valor numérico do mapa (indicado pelo índice do path no mapList em map.h)
 	if (index == 1) {
-		//exemplo de texto, extremamente sujeito a alterações
-		dpp(5,4,10,6,"pressione enter\npara abrir a\ncaixa de texto.");
-		dpp(13,4,18,6,"digite uma\nfunção constante!");
-		dpp(21,4,26,6,"nela, para qualquer\nvalor de x, o\nf(x) é o mesmo.");
+		dpp(2.5,4,7.5,6,"pressione enter\npara abrir a\ncaixa de texto.");
+		dpp(9.5,4,14.5,6,"digite uma\nfunção constante!");
+		dpp(16.5,4,21.5,6,"nela, para qualquer\nvalor de x, o\nf(x) é o mesmo.");
+		dpp(23.5,4,28.5,6,"use as setas do\nteclado p/ caminhar\npor circuitos.");
+	} else if (index == 2) {
+		dpp(13.25,8.25,17.75,12.25,"use a variável \"x\"\npara fazer com\nque a f(x) se\naltere ao longo\ndo eixo x\n(horizontal).");
+		dpp(9.5,14,21.5,15,"você também pode usar \"-\"\npara negar valores numéricos!");
+	} else if (index == 3) {
+		dpp(8.5,10.5,18.5,12.5,"o que você digitou no mapa anterior\nfoi uma função do primeiro grau,\nque segue a estrutura: f(x) = ax + b");
+		dpp(7.5,14,20.5,16,"\"a\" é o coeficiente angular. ele multiplica\n(ou divide) x e altera o ângulo da reta de\nseu gráfico. tente diferentes valores para \"a\"!");
+	} else if (index == 4) {
+		dpp(17.5,1.5,29.5,3.5,"também é possível escrever x ao quadrado,\ncom x2 (ou x^2). isso é equivalente a\nmultiplicar x por x (x*x).");
+		dpp(17.5,6.5,29.5,8.5,"obviamente, é possível juntar\n\"tipos\" de x diferentes.\ncoisas como 2x - x2 são possíveis!");
+		dpp(17.5,10,29.5,11.5,"não esqueça que é possível alterar a\ndireção do jogador apertando [tab]!");
+	} else if (index == 8) {
+		dpp(8,1.5,26,3.5,"é possível também utilizar funções trigonométricas,\ncomo sen(x), cos(x), tg(x)... estas são funções periódicas\n(funções que se repetem depois de um intervalo constante).");
+	} else if (index == 12) {
+		dpp(13,2,18,2,"parabéns!");
+		dpp(12,4,19,6,"você completou o jogo.\nesse é o fim dele.\nobrigado por jogar!");
 	}
 }
 
@@ -40,6 +55,7 @@ void setTileSafe(int t[mapTotal],int x,int y,int v) {
 
 TMap* createMap() {
 	TMap *map = (TMap*)malloc(sizeof(TMap));
+	map->index = 0;
 	map->collision = (int*)calloc(mapTotal,sizeof(int));
 	map->front = (int*)calloc(mapTotal,sizeof(int));
 	map->back = (int*)calloc(mapTotal,sizeof(int));
@@ -354,7 +370,6 @@ int loadMapStart(const XMLNode *node,SAX_Data *sd) {
 		}
 		mapr->wiresN++;
 	}
-	//object
 	return 1;
 }
 
@@ -401,7 +416,8 @@ int loadMapEnd(const XMLNode *node,SAX_Data *sd) {
 }
 
 void loadMap(TMap *map,int x,int y) {
-	al_set_path_filename(game.path,mapList[mapGrid[y*mapGridWidth+x]]);
+	map->index = mapGrid[y*mapGridWidth+x];
+	al_set_path_filename(game.path,mapList[map->index]);
 	printf(">> map %dx%d (%s)\n",x,y,al_path_cstr(game.path,'/'));
 	
 	XMLDoc doc;

@@ -105,8 +105,8 @@ bool updatePause(bool ingame) {
 			return false;
 		}
 		if (input.up->repeat && selection > (ingame?-1:0)) selection--;
-		if (input.down->repeat && selection < 2) selection++;
-		if ((selection == (ingame?-1:2) && input.enter->press) || input.escape->press) {
+		if (input.down->repeat && selection < 3) selection++;
+		if ((selection == (ingame?-1:3) && input.enter->press) || input.escape->press) {
 			if (ingame) {
 				unpausing = true;
 				return false;
@@ -117,7 +117,11 @@ bool updatePause(bool ingame) {
 			updateSlider(&game.volumeBgm);
 		} else if (selection == 1) {
 			updateSlider(&game.volumeSfx);
-		} else if (ingame && selection == 2) {
+		} else if (selection == 2) {
+			if (input.enter->press) {
+				game.showPopups = !game.showPopups;
+			}
+		} else if (ingame && selection == 3) {
 			if (input.enter->press) {
 				confirm = true;
 				selection2 = 1;
@@ -136,24 +140,24 @@ void drawPause(bool ingame) {
 		BLENDALPHA();
 		al_draw_filled_rectangle(px(0),py(0),px(1),py(1),al_map_rgba_f(0,0,0,.375*l));
 		BLENDDEFAULT();
-		drawBox(.5,.5,.4,.4*l,COLOR_HGHL,COLOR_SCND);
-		al_draw_text(data.font_Regular37,COLOR_TEXT,px(.5),py(lerp(.5,.315,l)),ALLEGRO_ALIGN_CENTRE,"pause");
-		al_draw_text(data.font_Regular52,(selection == -1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.38,l)),ALLEGRO_ALIGN_CENTRE,"continuar");
-		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.62,l)),ALLEGRO_ALIGN_CENTRE,"sair ao menu");
+		drawBox(.5,.5,.4,.5*l,COLOR_HGHL,COLOR_SCND);
+		al_draw_text(data.font_Regular37,COLOR_TEXT,px(.5),py(lerp(.5,.26,l)),ALLEGRO_ALIGN_CENTRE,"pause");
+		al_draw_text(data.font_Regular52,(selection == -1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.34,l)),ALLEGRO_ALIGN_CENTRE,"continuar");
+		al_draw_text(data.font_Regular52,(selection == 3)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.66,l)),ALLEGRO_ALIGN_CENTRE,"sair ao menu");
 	} else {
 		drawBitmapTinted(data.bitmap_parallax1,al_map_rgb_f(1,1,.8),.5-sinf(animTempo)*.03,.5-cosf(animTempo)*.03,game.idealProp*1.1,1.1,0,0,0);
 		l = easeOut((scene.tempo > 0)?(scene.tempo):(1+scene.tempo));
-		drawBox(.5,.5,.4,.4*l,COLOR_HGHL,COLOR_SCND);
-		al_draw_text(data.font_Regular52,COLOR_TEXT,px(.5),py(lerp(.5,.315,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
-		al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.62,l)),ALLEGRO_ALIGN_CENTRE,"voltar");
+		drawBox(.5,.5,.4,.5*l,COLOR_HGHL,COLOR_SCND);
+		al_draw_text(data.font_Regular52,COLOR_TEXT,px(.5),py(lerp(.5,.27,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
+		al_draw_text(data.font_Regular52,(selection == 3)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.66,l)),ALLEGRO_ALIGN_CENTRE,"voltar");
 	}
 	
 	BLENDALPHA();
 	if (selection > (ingame?-1:0)) {
-		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.5,.25,l)-fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,4,0,0,0);
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.5,.2,l)-fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,4,0,0,0);
 	}
-	if (selection < 2) {
-		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.5,.75,l)+fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,5,0,0,0);
+	if (selection < 3) {
+		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.5,.8,l)+fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,5,0,0,0);
 	}
 	if (selection < 0 || selection > 1) {
 		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.725+fabs(sinf(animTempo*16))*.007,.5,1./18,1./18,4,2,0,0,0,0);
@@ -164,8 +168,11 @@ void drawPause(bool ingame) {
 	BLENDDEFAULT();
 	
 	//sliders
-	drawSlider(lerp(.5,.46,l),game.volumeBgm,selection == 0,"volume bgm");
-	drawSlider(lerp(.5,.54,l),game.volumeSfx,selection == 1,"volume sfx");
+	drawSlider(lerp(.5,.42,l),game.volumeBgm,selection == 0,"volume bgm");
+	drawSlider(lerp(.5,.5,l),game.volumeSfx,selection == 1,"volume sfx");
+	
+	//toggle
+	al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.5,.58,l)),ALLEGRO_ALIGN_CENTRE,game.showPopups?"desligar tutorial":"ligar tutorial");
 	
 	//tela de confirmação
 	if (confirmTempo > 0) {

@@ -57,6 +57,7 @@ struct Game {
 	
 	float volumeBgm; //volume da música de fundo
 	float volumeSfx; //volume dos sons de efeito
+	bool showPopups; //se deve mostrar balões de tutorial ou não
 
 } game;
 
