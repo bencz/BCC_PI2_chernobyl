@@ -57,7 +57,7 @@ void unload() {
 
 bool start() {
 	srand(time(NULL));
-	al_set_window_title(game.display,"Projeto Chernobyl");
+	al_set_window_title(game.display,"A.I.-Sama");
 	al_clear_to_color(al_map_rgb(0,0,0));
 	al_flip_display();
 	

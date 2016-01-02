@@ -603,6 +603,7 @@ bool level_start() {
 	playerFrame = 0;
 	
 	paused = false;
+	pauseTempo = 0;
 	
 	moving = false;
 	dead = false;

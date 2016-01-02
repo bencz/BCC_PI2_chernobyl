@@ -81,6 +81,7 @@ void menu_draw() {
 	al_draw_text(data.font_Regular52,(selection == 1)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.625,.6,l)),ALLEGRO_ALIGN_CENTRE,"configurações");
 	al_draw_text(data.font_Regular52,(selection == 2)?COLOR_HGHL:COLOR_TEXT,px(.5),py(lerp(.625,.65,l)),ALLEGRO_ALIGN_CENTRE,"sair");
 	BLENDALPHA();
+	al_draw_text(data.font_Regular37,al_map_rgba(255,255,255,110+sinf(animTempo*8)*30),px(.005),py(.95),ALLEGRO_ALIGN_LEFT,"github.com/bencz/BCC_PI2_chernobyl");
 	if (selection > 0) {
 		drawSpriteSheetTinted(data.bitmap_keys,al_map_rgba_f(1,1,1,.5),.5,lerp(.625,.475,l)-fabs(sinf(animTempo*16))*.007,1./18,1./18,4,2,4,0,0,0);
 	}
